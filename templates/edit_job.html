@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>작업 수정</title>
+</head>
+<body>
+    <h2>작업 수정</h2>
+    <form method="post">
+        <p>작업 날짜:</p>
+        <input type="date" name="date" value="{{ job.date }}" required>
+
+        <p>작업 시간:</p>
+        <select name="hour">
+            {% for h in range(0, 24) %}
+                <option value="{{ h }}" {% if h|string == job.time.split(' ')[1][:-1] %}selected{% endif %}>{{ h }}시</option>
+            {% endfor %}
+        </select>
+        <select name="minute">
+            {% for m in range(0, 60, 5) %}
+                <option value="{{ m }}" {% if m|string == job.time.split(' ')[2][:-1] %}selected{% endif %}>{{ m }}분</option>
+            {% endfor %}
+        </select>
+
+        <p>기사:</p>
+        <select name="worker_select">
+            <option value="">기사 선택</option>
+            {% for w in workers %}
+                <option value="{{ w }}" {% if job.worker == w %}selected{% endif %}>{{ w }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" name="worker_input" placeholder="기사 직접 입력">
+
+        <p>장비:</p>
+        <select name="machine_select">
+            <option value="">장비 선택</option>
+            {% for m in machines %}
+                <option value="{{ m }}" {% if job.machine == m %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" name="machine_input" placeholder="장비 직접 입력">
+
+        <p>거래처:</p>
+        <select name="client_select">
+            <option value="">거래처 선택</option>
+            {% for c in clients %}
+                <option value="{{ c }}" {% if job.client == c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" name="client_input" placeholder="거래처 직접 입력">
+
+        <p>작업 위치:</p>
+        <input type="text" name="location" value="{{ job.location }}" required>
+
+        <p>요청 사항:</p>
+        <textarea name="note">{{ job.note }}</textarea>
+
+        <br><br>
+        <button type="submit">저장</button>
+        <a href="{{ url_for('list_jobs') }}">취소</a>
+    </form>
+</body>
+</html>

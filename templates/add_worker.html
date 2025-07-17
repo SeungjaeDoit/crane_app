@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>기사 등록</title>
+</head>
+<body>
+    <h2>기사 등록</h2>
+
+    <form method="POST">
+        <input type="text" name="name" placeholder="기사 이름 입력" required>
+        <button type="submit">등록</button>
+    </form>
+
+    <h3>등록된 기사 목록</h3>
+    <ul>
+        {% for worker in workers %}
+        <li>{{ worker }}</li>
+        {% endfor %}
+    </ul>
+
+    <hr>
+
+    <form action="{{ url_for('dashboard') }}">
+        <button type="submit" style="font-size: 16px;">🏠 메인화면으로 돌아가기</button>
+    </form>
+</body>
+</html>

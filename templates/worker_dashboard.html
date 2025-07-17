@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>기사 대시보드</title>
+</head>
+<body>
+    <h2>{{ username }}님, 환영합니다! (기사 전용)</h2>
+
+    <ul>
+        <li><a href="{{ url_for('list_jobs') }}">📋 내 작업 목록 보기</a></li>
+        <li><a href="{{ url_for('logout') }}">🔓 로그아웃</a></li>
+    </ul>
+</body>
+</html>
