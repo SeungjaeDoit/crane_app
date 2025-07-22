@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>작업 등록</title>
+</head>
+<body>
+<h2>작업 등록</h2>
+<form method="POST">
+    날짜: <input type="date" name="date"><br>
+    시간: <input type="text" name="time"><br><br>
+
+    <h3>기사 선택 또는 직접입력</h3>
+    <select onchange="document.getElementById('worker_input').value = this.value;">
+        <option value="">선택 안함</option>
+        {% for worker in workers %}
+            <option value="{{ worker['name'] }}">{{ worker['name'] }}</option>
+        {% endfor %}
+    </select>
+    <input type="text" id="worker_input" name="worker"><br><br>
+
+    <h3>장비 선택 또는 직접입력</h3>
+    <select onchange="document.getElementById('machine_input').value = this.value;">
+        <option value="">선택 안함</option>
+        {% for machine in machines %}
+            <option value="{{ machine['model'] }}">{{ machine['type'] }} ({{ machine['model'] }})</option>
+        {% endfor %}
+    </select>
+    <input type="text" id="machine_input" name="machine"><br><br>
+
+    <h3>거래처 선택 또는 직접입력</h3>
+    <select onchange="document.getElementById('client_input').value = this.value;">
+        <option value="">선택 안함</option>
+        {% for client in clients %}
+            <option value="{{ client }}">{{ client }}</option>
+        {% endfor %}
+    </select>
+    <input type="text" id="client_input" name="client"><br><br>
+
+    <h3>작업 위치 선택 또는 직접입력</h3>
+    <select onchange="document.getElementById('location_input').value = this.value;">
+        <option value="">선택 안함</option>
+        {% for location in locations %}
+            <option value="{{ location }}">{{ location }}</option>
+        {% endfor %}
+    </select>
+    <input type="text" id="location_input" name="location"><br><br>
+
+    요청사항: <textarea name="note"></textarea><br><br>
+
+    <button type="submit">작업 등록</button>
+</form>
+
+<a href="/dashboard">← 대시보드로 돌아가기</a>
+</body>
+</html>

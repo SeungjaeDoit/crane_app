@@ -6,12 +6,19 @@
 </head>
 <body>
     <h2>{{ username }}님, 환영합니다!</h2>
-    <ul>
-        <li><a href="/add_worker">기사 등록</a></li>
-        <li><a href="/add_machine">장비 등록</a></li>
-        <li><a href="/create_job">작업지시 등록</a></li>
-        <li><a href="/jobs">작업 목록 보기</a></li>
-        <li><a href="/logout">로그아웃</a></li>
-    </ul>
+
+    {% if role == 'boss' %}
+        <ul style="list-style: none; padding: 0;">
+            <li><a href="{{ url_for('add_worker') }}">➕ 기사 등록</a></li>
+            <li><a href="{{ url_for('add_machine') }}">➕ 장비 등록</a></li>
+            <li><a href="{{ url_for('add_job') }}">📝 작업지시 등록</a></li>
+            <li><a href="{{ url_for('jobs') }}">📋 작업 목록 보기</a></li>
+        </ul>
+    {% else %}
+        <p>⚠️ 기사용 대시보드는 준비 중입니다.</p>
+    {% endif %}
+
+    <hr>
+    <a href="{{ url_for('logout') }}">🚪 로그아웃</a>
 </body>
 </html>

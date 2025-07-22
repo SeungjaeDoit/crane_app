@@ -8,20 +8,19 @@
     <h2>장비 등록</h2>
 
     <form method="POST">
-        <input type="text" name="machine" placeholder="장비 예: 25톤 기중기" required>
+        <input type="text" name="machine_type" placeholder="장비 입력" required>
+        <input type="text" name="model" placeholder="차량번호 입력" required>
         <button type="submit">등록</button>
     </form>
 
     <h3>등록된 장비 목록</h3>
     <ul>
-        {% for machine in machines %}
-        <li>{{ machine }}</li>
+        {% for m in machines %}
+        <li>{{ m.type }} - {{ m.model }}</li>
         {% endfor %}
     </ul>
 
     <hr>
-
-    <!-- ✅ 버튼은 여기 딱 한 번만 -->
     <form action="{{ url_for('dashboard') }}">
         <button type="submit" style="font-size: 16px;">🏠 메인화면으로 돌아가기</button>
     </form>

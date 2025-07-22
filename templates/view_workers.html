@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>기사 목록</title>
+</head>
+<body>
+    <h1>기사 목록</h1>
+    <ul>
+        {% for w in workers %}
+            <li>{{ w.name }} - {{ w.phone }}</li>
+        {% endfor %}
+    </ul>
+    <br>
+    <a href="{{ url_for('dashboard') }}">← 대시보드로 돌아가기</a>
+</body>
+</html>
