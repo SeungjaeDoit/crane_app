@@ -36,7 +36,16 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'username' in session:
-        return redirect(url_for('dashboard'))
+        # 이미 로그인된 상태면 역할에 따라 대시보드로 이동
+        username = session['username']
+        user_info = users.get(username)
+        if user_info:
+            if user_info['role'] == 'boss':
+                return redirect(url_for('dashboard'))
+            elif user_info['role'] == 'worker':
+                return redirect(url_for('dashboard_worker'))
+        # 기본 로그인 화면
+        session.clear()
 
     error = None
     if request.method == 'POST':
@@ -46,9 +55,14 @@ def login():
         if username in users and users[username]['password'] == password:
             session.permanent = True
             session['username'] = username
-            return redirect(url_for('dashboard'))
+            role = users[username]['role']
+            if role == 'boss':
+                return redirect(url_for('dashboard'))
+            else:
+                return redirect(url_for('dashboard_worker'))
         else:
             error = '아이디 또는 비밀번호가 틀렸습니다.'
+
     return render_template('login.html', error=error)
 
 @app.route('/logout')
@@ -59,13 +73,43 @@ def logout():
 @app.route('/dashboard')
 def dashboard():
     username = session.get('username')
-    user_info = users.get(username)
-
-    if not username or not user_info:
+    if not username or username not in users:
         return redirect(url_for('login'))
 
-    role = user_info['role']
-    return render_template('dashboard.html', username=username, role=role)
+    user_info = users[username]
+    role = user_info.get('role')
+
+    if role == 'boss':
+        # 사장용 대시보드 렌더링
+        return render_template('dashboard.html', username=username, role=role)
+    elif role == 'worker':
+        # 기사용 대시보드 페이지로 리다이렉트
+        return redirect(url_for('dashboard_worker'))
+    else:
+        return "권한이 없습니다.", 403
+    
+@app.route('/dashboard_worker')
+def dashboard_worker():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    username = session['username']
+    user_info = users.get(username)
+
+    # 권한 확인: worker인지 체크
+    if not user_info or user_info.get('role') != 'worker':
+        return "권한이 없습니다.", 403
+
+    company = user_info['company']
+
+    # 회사별 작업 목록 로드
+    jobs_db = load_json('jobs.json', {})
+    job_list = jobs_db.get(company, [])
+
+    # 현재 로그인한 기사의 작업만 필터링
+    my_jobs = [job for job in job_list if job.get('worker') == username]
+
+    return render_template('dashboard_worker.html', username=username, jobs=my_jobs)
 
 @app.route('/register/role', methods=['GET', 'POST'])
 def choose_role():
@@ -73,19 +117,47 @@ def choose_role():
 
 @app.route('/register/boss', methods=['GET', 'POST'])
 def register_boss():
+    companies = load_json('companies.json', {})  # 회사별 정보 로드
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         company = request.form['company']
+        phone = request.form['phone']
+        input_code = request.form['company_code']
 
+        # 회사명 중복 검사: 같은 회사명으로 다른 사장이 이미 등록되어있는지 확인
+        if company in companies:
+            error = '이미 등록된 회사명입니다.'
+            return render_template('register_boss.html', error=error)
+
+        # 회사코드가 6자리인지 체크
+        if len(input_code) != 6:
+            error = '회사 코드는 6자리여야 합니다.'
+            return render_template('register_boss.html', error=error)
+
+        # 아이디 중복 검사
+        if username in users:
+            error = '이미 존재하는 아이디입니다.'
+            return render_template('register_boss.html', error=error)
+
+        # 회원가입
         users[username] = {
             'password': password,
             'role': 'boss',
-            'company': company
+            'company': company,
+            'phone': phone,
+            'company_code': input_code
         }
-
-        # 착용 가능한 공간 추가
         save_json('users.json', users)
+
+        # companies.json에 새 회사와 코드 등록
+        companies[company] = {
+            'code': input_code,
+            'phone': phone
+        }
+        save_json('companies.json', companies)
+
+        # 관련 json 초기화
         save_json('workers.json', {**load_json('workers.json', {}), company: []})
         save_json('machines.json', {**load_json('machines.json', {}), company: []})
         save_json('clients.json', {**load_json('clients.json', {}), company: []})
@@ -98,27 +170,50 @@ def register_boss():
 
 @app.route('/register/worker', methods=['GET', 'POST'])
 def register_worker():
+    companies = load_json('companies.json', {})  # 회사명 + 코드 로드
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        name = request.form['name']
+        phone = request.form['phone']
         company = request.form['company']
+        input_code = request.form['company_code']
 
-        # users 딕셔너리 업데이트
+        # 회사명 존재 여부 확인
+        if company not in companies:
+            error = '존재하지 않는 회사명입니다.'
+            return render_template('register_worker.html', companies=sorted(companies.keys()), error=error)
+
+        # 회사코드 인증
+        if companies[company]['code'] != input_code:
+            error = '회사 코드가 올바르지 않습니다.'
+            return render_template('register_worker.html', companies=sorted(companies.keys()), error=error)
+
+        # 아이디 중복 확인
+        if username in users:
+            error = '이미 존재하는 아이디입니다.'
+            return render_template('register_worker.html', companies=sorted(companies.keys()), error=error)
+
+        # 가입 처리
         users[username] = {
             'password': password,
             'role': 'worker',
-            'company': company
+            'company': company,
+            'name': name,
+            'phone': phone
         }
         save_json('users.json', users)
+
+        # workers.json에도 자동 등록
+        workers_db = load_json('workers.json', {})
+        workers_db.setdefault(company, []).append({'name': name, 'phone': phone})
+        save_json('workers.json', workers_db)
 
         session['username'] = username
         return redirect(url_for('dashboard'))
 
-    # 회사 목록 불러오기 (users 중 boss role 회사만)
-    boss_companies = set(u['company'] for u in users.values() if u['role'] == 'boss')
-    companies = sorted(boss_companies)
-
-    return render_template('register_worker.html', companies=companies)
+    return render_template('register_worker.html', companies=sorted(companies.keys()))
 
 @app.route('/add_worker', methods=['GET', 'POST'])
 def add_worker():
@@ -173,19 +268,17 @@ def add_job():
             "note": request.form['note']
         }
 
+        print("새 작업 등록 데이터:", new_job)
+
         jobs_db = load_json('jobs.json', {})
+        print("저장 전 작업 수:", len(jobs_db.get(company, [])))
+
         jobs_db.setdefault(company, []).append(new_job)
         save_json('jobs.json', jobs_db)
 
-        # 거래처/위치 자동 저장
-        for field, filename in [('client', 'clients.json'), ('location', 'locations.json')]:
-            data = load_json(filename, {})
-            data.setdefault(company, [])
-            if new_job[field] not in data[company]:
-                data[company].append(new_job[field])
-                save_json(filename, data)
+        print("저장 후 작업 수:", len(jobs_db.get(company, [])))
 
-        return redirect('/jobs')
+        return redirect('/jobs')  # POST 처리 후 리다이렉트
 
     # GET 요청 시 데이터 준비
     workers = load_json('workers.json', {}).get(company, [])
@@ -330,6 +423,69 @@ def edit_job(job_index):
         clients=clients,
         locations=locations,
         request=request  # 필터 유지용
+    )
+
+@app.route('/company_info', methods=['GET', 'POST'])
+def company_info():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    username = session['username']
+    user = users.get(username)
+
+    if not user or user['role'] != 'boss':
+        return "권한이 없습니다.", 403
+
+    company = user['company']
+    companies = load_json('companies.json', {})
+    company_info = companies.get(company, {})
+
+    error = None
+    success = None
+
+    if request.method == 'POST':
+        new_company_name = request.form['company']
+        new_phone = request.form['phone']
+        new_password = request.form['password']
+        new_company_code = request.form['company_code']
+
+        # 간단한 유효성 검사
+        if len(new_company_code) != 6:
+            error = '회사 코드는 6자리여야 합니다.'
+        elif new_company_name != company and new_company_name in companies:
+            error = '이미 존재하는 회사명입니다.'
+        else:
+            # users.json 수정 - 회사명, 전화번호, 비밀번호 변경
+            if new_company_name != company:
+                # 회사명 변경시 users 딕셔너리 내 모든 관련 데이터(사장, 기사 등) 회사명 변경 필요
+                # 간단하게 사장만 변경 예시 (실제로는 기사도 함께 처리하는게 좋음)
+                users[username]['company'] = new_company_name
+
+                # companies.json 회사명 변경 (이름 키 변경)
+                companies[new_company_name] = companies.pop(company)
+                company = new_company_name  # 회사명 변수도 변경
+
+            users[username]['phone'] = new_phone
+            if new_password.strip():
+                users[username]['password'] = new_password
+
+            save_json('users.json', users)
+
+            # companies.json 수정 - 회사 전화번호, 코드 변경
+            companies[company]['phone'] = new_phone
+            companies[company]['code'] = new_company_code
+            save_json('companies.json', companies)
+
+            success = '회사 정보가 성공적으로 수정되었습니다.'
+
+    return render_template(
+        'company_info.html',
+        username=username,
+        user=user,
+        company=company,
+        company_info=company_info,
+        error=error,
+        success=success
     )
 
 @app.route('/delete_job/<int:job_index>')

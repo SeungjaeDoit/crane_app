@@ -27,6 +27,7 @@
             box-sizing: border-box;
             border-radius: 5px;
             border: 1px solid #ccc;
+            font-size: 14px;
         }
         textarea {
             height: 80px;
@@ -56,59 +57,80 @@
         a:hover {
             text-decoration: underline;
         }
+        .inline-selects {
+            display: flex;
+            gap: 10px;
+        }
+        .inline-selects select {
+            width: 50%;
+        }
     </style>
 </head>
 <body>
 
 <h2>작업 수정</h2>
+
 <form method="POST">
     {% for key, value in request.args.items() %}
         <input type="hidden" name="filter_{{ key }}" value="{{ value }}">
     {% endfor %}
 
-    <label>날짜</label>
-    <input type="date" name="date" value="{{ job.date }}">
+    <label for="date">날짜</label>
+    <input type="date" id="date" name="date" value="{{ job.date }}" required>
 
-    <label>시간</label>
-    <input type="text" name="time" value="{{ job.time }}">
+    <label>시간 선택</label>
+    <div class="inline-selects">
+        <select id="hour" name="hour" required>
+            <option value="">시</option>
+            {% set current_hour = job.time.split(':')[0] if job.time else '' %}
+            {% for h in range(0, 24) %}
+                <option value="{{ '%02d' % h }}" {% if current_hour == '%02d' % h %}selected{% endif %}>{{ '%02d' % h }} 시</option>
+            {% endfor %}
+        </select>
+        <select id="minute" name="minute" required>
+            <option value="">분</option>
+            {% set current_minute = job.time.split(':')[1] if job.time else '' %}
+            {% for m in [0,10,20,30,40,50] %}
+                <option value="{{ '%02d' % m }}" {% if current_minute == '%02d' % m %}selected{% endif %}>{{ '%02d' % m }} 분</option>
+            {% endfor %}
+        </select>
+    </div>
 
     <label>기사 선택 또는 직접입력</label>
     <select onchange="document.getElementById('worker_input').value = this.value;">
         <option value="">선택 안함</option>
         {% for worker in workers %}
-            <option value="{{ worker.name }}" {% if job.worker == worker.name %}selected{% endif %}>{{ worker.name }}</option>
+            <option value="{{ worker.name }}" {% if worker.name == job.worker %}selected{% endif %}>{{ worker.name }}</option>
         {% endfor %}
     </select>
-    <input type="text" id="worker_input" name="worker" value="{{ job.worker }}">
+    <input type="text" id="worker_input" name="worker" value="{{ job.worker }}" required>
 
     <label>장비 선택 또는 직접입력</label>
     <select onchange="document.getElementById('machine_input').value = this.value;">
         <option value="">선택 안함</option>
         {% for machine in machines %}
-            <option value="{{ machine.model }}" {% if job.machine == machine.model %}selected{% endif %}>
-                {{ machine.type }} ({{ machine.model }})
-            </option>
+            <option value="{{ machine.model }}" {% if machine.model == job.machine %}selected{% endif %}>{{ machine.type }} ({{ machine.model }})</option>
         {% endfor %}
     </select>
-    <input type="text" id="machine_input" name="machine" value="{{ job.machine }}">
+    <input type="text" id="machine_input" name="machine" value="{{ job.machine }}" required>
 
     <label>거래처 선택 또는 직접입력</label>
     <select onchange="document.getElementById('client_input').value = this.value;">
         <option value="">선택 안함</option>
         {% for client in clients %}
-            <option value="{{ client }}" {% if job.client == client %}selected{% endif %}>{{ client }}</option>
+            <option value="{{ client }}" {% if client == job.client %}selected{% endif %}>{{ client }}</option>
         {% endfor %}
     </select>
-    <input type="text" id="client_input" name="client" value="{{ job.client }}">
+    <input type="text" id="client_input" name="client" value="{{ job.client }}" required>
 
     <label>작업 위치 선택 또는 직접입력</label>
     <select onchange="document.getElementById('location_input').value = this.value;">
         <option value="">선택 안함</option>
         {% for location in locations %}
-            <option value="{{ location }}" {% if job.location == location %}selected{% endif %}>{{ location }}</option>
+            <option value="{{ location }}" {% if location == job.location %}selected{% endif %}>{{ location }}</option>
         {% endfor %}
     </select>
-    <input type="text" id="location_input" name="location" value="{{ job.location }}">
+    <input type="text" id="location_input" name="location" value="{{ job.location }}" required>
 
     <label>요청사항</label>
     <textarea name="note">{{ job.note }}</textarea>
@@ -117,6 +139,24 @@
 </form>
 
 <a href="/jobs">← 작업 목록으로 돌아가기</a>
+
+<script>
+    // 제출 시 시, 분을 합쳐서 time 필드로 전송하는 스크립트
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const hour = document.getElementById('hour').value;
+        const minute = document.getElementById('minute').value;
+        if (!hour || !minute) {
+            alert('시간(시, 분)을 모두 선택해주세요.');
+            e.preventDefault();
+            return false;
+        }
+        let timeInput = document.createElement('input');
+        timeInput.type = 'hidden';
+        timeInput.name = 'time';
+        timeInput.value = hour + ':' + minute;
+        this.appendChild(timeInput);
+    });
+</script>
 
 </body>
 </html>

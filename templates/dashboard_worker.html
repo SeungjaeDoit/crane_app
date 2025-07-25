@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>기사 대시보드 - 업무 확인</title>
+    <style>
+        body {
+            font-family: '맑은 고딕', Malgun Gothic, 돋움, Dotum, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px 10px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+            word-break: break-word;
+            vertical-align: top;
+        }
+        th {
+            background-color: #eeeeee;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .btn {
+            padding: 6px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            color: white;
+            cursor: pointer;
+            user-select: none;
+            font-size: 14px;
+            border: none;
+        }
+        .complete-btn {
+            background-color: #28a745;
+        }
+        .complete-btn:hover {
+            background-color: #218838;
+        }
+        a.logout-link {
+            display: block;
+            margin-top: 20px;
+            text-align: center;
+            color: #555;
+            text-decoration: none;
+        }
+        a.logout-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h2>{{ username }}님, 업무 확인</h2>
+
+    {% if jobs %}
+    <table>
+        <thead>
+            <tr>
+                <th>날짜</th>
+                <th>시간</th>
+                <th>장비</th>
+                <th>거래처</th>
+                <th>위치</th>
+                <th>요청사항</th>
+                <th>상태</th>
+                <th>작업 완료</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for job in jobs %}
+            <tr>
+                <td>{{ job.date }}</td>
+                <td>{{ job.time }}</td>
+                <td>{{ job.machine }}</td>
+                <td>{{ job.client }}</td>
+                <td>{{ job.location }}</td>
+                <td>{{ job.note }}</td>
+                <td>{{ job.status if job.status else '진행중' }}</td>
+                <td>
+                    {% if job.status != '완료' %}
+                    <a href="{{ url_for('toggle_complete', job_index=loop.index0) }}" class="btn complete-btn"
+                       onclick="return confirm('작업을 완료 처리하시겠습니까?');">완료</a>
+                    {% else %}
+                    완료됨
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align:center;">할당된 작업이 없습니다.</p>
+    {% endif %}
+
+    <a href="{{ url_for('logout') }}" class="logout-link">로그아웃</a>
+</body>
+</html>

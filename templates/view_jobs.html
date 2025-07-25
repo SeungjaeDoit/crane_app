@@ -195,7 +195,6 @@
     <a href="{{ url_for('jobs') }}" style="margin-left:10px; color:#2196F3; cursor:pointer;">초기화</a>
 </form>
 
-
 {% if jobs %}
 <table>
     <thead>
@@ -235,15 +234,15 @@
         <td class="actions">
             {% if job.status == '완료' %}
                 <a href="{{ url_for('toggle_complete', job_index=loop.index0, **request.args) }}"
-                   class="btn delete-btn"
-                   onclick="return confirm('완료 상태를 취소하시겠습니까?');">완료 취소</a>
+                class="btn delete-btn"
+                onclick="return confirm('완료 상태를 취소하시겠습니까?');">완료 취소</a>
             {% else %}
                 <a href="{{ url_for('toggle_complete', job_index=loop.index0, **request.args) }}"
-                   class="btn edit-btn"
-                   onclick="return confirm('작업을 완료 처리하시겠습니까?');">완료</a>
+                class="btn edit-btn"
+                onclick="return confirm('작업을 완료 처리하시겠습니까?');">완료</a>
             {% endif %}
             <a href="{{ url_for('edit_job', job_index=loop.index0, **request.args) }}"
-               class="btn edit-btn">수정</a>
+            class="btn edit-btn">수정</a>
             <a href="#" class="btn delete-btn" onclick="openDeleteModal({{ loop.index0 }}); return false;">삭제</a>
         </td>
     </tr>

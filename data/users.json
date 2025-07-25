@@ -1,0 +1,30 @@
+{
+  "A1234": {
+    "password": "cc0303",
+    "role": "boss",
+    "company": "서현중기",
+    "phone": "01028097135",
+    "company_code": "123456"
+  },
+  "A4321": {
+    "password": "cc0303",
+    "role": "worker",
+    "company": "서현중기",
+    "name": "이기사",
+    "phone": "01028093333"
+  },
+  "A12345": {
+    "password": "cc0303",
+    "role": "boss",
+    "company": "서현꼬질케이중기",
+    "phone": "01012341234",
+    "company_code": "123456"
+  },
+  "A54321": {
+    "password": "cc0303",
+    "role": "worker",
+    "company": "서현꼬질케이중기",
+    "name": "백서현",
+    "phone": "01028097135"
+  }
+}

@@ -3,54 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <title>작업 등록</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f8f8f8;
+            border-radius: 10px;
+        }
+        h2 {
+            text-align: center;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 20px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 6px;
+            box-sizing: border-box;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        button {
+            margin-top: 25px;
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #555;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .inline-selects {
+            display: flex;
+            gap: 10px;
+        }
+        .inline-selects select {
+            width: 50%;
+        }
+    </style>
 </head>
 <body>
+
 <h2>작업 등록</h2>
+
 <form method="POST">
-    날짜: <input type="date" name="date"><br>
-    시간: <input type="text" name="time"><br><br>
+    <label for="date">날짜</label>
+    <input type="date" id="date" name="date" required>
 
-    <h3>기사 선택 또는 직접입력</h3>
+    <label>시간 선택</label>
+    <div class="inline-selects">
+        <select id="hour" name="hour" required>
+            <option value="">시</option>
+            {% for h in range(0,24) %}
+            <option value="{{ '%02d' % h }}">{{ '%02d' % h }} 시</option>
+            {% endfor %}
+        </select>
+        <select id="minute" name="minute" required>
+            <option value="">분</option>
+            {% for m in [0,10,20,30,40,50] %}
+            <option value="{{ '%02d' % m }}">{{ '%02d' % m }} 분</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <label>기사 선택 또는 직접입력</label>
     <select onchange="document.getElementById('worker_input').value = this.value;">
-        <option value="">선택 안함</option>
-        {% for worker in workers %}
-            <option value="{{ worker['name'] }}">{{ worker['name'] }}</option>
-        {% endfor %}
-    </select>
-    <input type="text" id="worker_input" name="worker"><br><br>
+    <option value="">선택 안함</option>
+    {% for worker in workers %}
+        <option value="{{ worker['username'] }}">{{ worker['name'] }}</option>
+    {% endfor %}
+</select>
+<input type="text" id="worker_input" name="worker" required>
 
-    <h3>장비 선택 또는 직접입력</h3>
+    <label>장비 선택 또는 직접입력</label>
     <select onchange="document.getElementById('machine_input').value = this.value;">
         <option value="">선택 안함</option>
         {% for machine in machines %}
             <option value="{{ machine['model'] }}">{{ machine['type'] }} ({{ machine['model'] }})</option>
         {% endfor %}
     </select>
-    <input type="text" id="machine_input" name="machine"><br><br>
+    <input type="text" id="machine_input" name="machine" required>
 
-    <h3>거래처 선택 또는 직접입력</h3>
+    <label>거래처 선택 또는 직접입력</label>
     <select onchange="document.getElementById('client_input').value = this.value;">
         <option value="">선택 안함</option>
         {% for client in clients %}
             <option value="{{ client }}">{{ client }}</option>
         {% endfor %}
     </select>
-    <input type="text" id="client_input" name="client"><br><br>
+    <input type="text" id="client_input" name="client" required>
 
-    <h3>작업 위치 선택 또는 직접입력</h3>
+    <label>작업 위치 선택 또는 직접입력</label>
     <select onchange="document.getElementById('location_input').value = this.value;">
         <option value="">선택 안함</option>
         {% for location in locations %}
             <option value="{{ location }}">{{ location }}</option>
         {% endfor %}
     </select>
-    <input type="text" id="location_input" name="location"><br><br>
+    <input type="text" id="location_input" name="location" required>
 
-    요청사항: <textarea name="note"></textarea><br><br>
+    <label>요청사항</label>
+    <textarea name="note"></textarea>
 
     <button type="submit">작업 등록</button>
 </form>
 
 <a href="/dashboard">← 대시보드로 돌아가기</a>
+
+<script>
+    // 제출 전에 시, 분을 합쳐서 hidden input으로 전달하는 스크립트 예시
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const hour = document.getElementById('hour').value;
+        const minute = document.getElementById('minute').value;
+        if (!hour || !minute) {
+            alert('시간(시, 분)을 모두 선택해주세요.');
+            e.preventDefault();
+            return false;
+        }
+        // 시:분 합쳐서 time 값으로 서버에 보냄
+        let timeInput = document.createElement('input');
+        timeInput.type = 'hidden';
+        timeInput.name = 'time';
+        timeInput.value = hour + ':' + minute;
+        this.appendChild(timeInput);
+    });
+</script>
+
 </body>
 </html>

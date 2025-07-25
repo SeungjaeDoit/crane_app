@@ -2,9 +2,8 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8" />
-    <title>사장 회원가입</title>
+    <title>회사 정보 수정</title>
     <style>
-        /* 이전에 사용하던 공통 스타일 적용 */
         body {
             font-family: '맑은 고딕', Malgun Gothic, 돋움, Dotum, sans-serif;
             max-width: 500px;
@@ -45,38 +44,58 @@
         button:hover {
             background-color: #0056b3;
         }
+        .message {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: 700;
+        }
         .error {
             color: red;
-            margin-top: 10px;
-            font-weight: 600;
+        }
+        .success {
+            color: green;
+        }
+        a.back-link {
+            display: block;
             text-align: center;
+            margin-top: 25px;
+            color: #555;
+            text-decoration: none;
+        }
+        a.back-link:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <h2>사장 회원가입</h2>
+    <h2>회사 정보 수정</h2>
 
     {% if error %}
-    <div class="error">{{ error }}</div>
+    <div class="message error">{{ error }}</div>
+    {% endif %}
+    {% if success %}
+    <div class="message success">{{ success }}</div>
     {% endif %}
 
     <form method="POST">
-        <label for="username">아이디</label>
-        <input type="text" id="username" name="username" required>
-
-        <label for="password">비밀번호</label>
-        <input type="password" id="password" name="password" required>
+        <label>아이디 (수정 불가)</label>
+        <input type="text" value="{{ username }}" disabled>
 
         <label for="company">회사명</label>
-        <input type="text" id="company" name="company" required>
+        <input type="text" id="company" name="company" value="{{ company }}" required>
 
         <label for="phone">전화번호</label>
-        <input type="text" id="phone" name="phone" required>
+        <input type="text" id="phone" name="phone" value="{{ company_info.phone }}" required>
 
-        <label for="company_code">회사 코드 6자리를 입력해주세요 기사가 가입시 입력해야합니다.</label>
-        <input type="password" id="company_code" name="company_code" maxlength="6" minlength="6" required>
+        <label for="password">비밀번호 (변경 원할 때만 입력)</label>
+        <input type="password" id="password" name="password" placeholder="새 비밀번호 입력">
 
-        <button type="submit">가입하기</button>
+        <label for="company_code">회사 코드 (6자리)</label>
+        <input type="text" id="company_code" name="company_code" maxlength="6" minlength="6" value="{{ company_info.code }}" required>
+
+        <button type="submit">정보 수정하기</button>
     </form>
+
+    <a href="{{ url_for('dashboard') }}" class="back-link">← 대시보드로 돌아가기</a>
 </body>
 </html>
