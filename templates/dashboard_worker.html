@@ -106,7 +106,25 @@
     {% else %}
     <p style="text-align:center;">할당된 작업이 없습니다.</p>
     {% endif %}
+<body>
+  <h2>{{ username }}님, 업무 확인</h2>
 
-    <a href="{{ url_for('logout') }}" class="logout-link">로그아웃</a>
+  <!-- 작업 목록 테이블 ... 기존 코드 -->
+
+  <!-- 메뉴 네비게이션 -->
+  <nav style="margin-top: 30px; display: flex; justify-content: center; gap: 20px;">
+    <a href="{{ url_for('profile') }}" 
+       style="background-color: #007bff; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+      내 정보 조회 및 수정
+    </a>
+    <a href="{{ url_for('calendar_view') }}" 
+       style="background-color: #17a2b8; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+      작업 상세 보기 및 수정 (캘린더형)
+    </a>
+    <a href="{{ url_for('logout') }}" 
+       style="background-color: #6c757d; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+      로그아웃
+    </a>
+  </nav>
 </body>
 </html>

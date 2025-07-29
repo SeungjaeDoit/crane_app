@@ -4,11 +4,10 @@
     <meta charset="UTF-8" />
     <title>사장 회원가입</title>
     <style>
-        /* 이전에 사용하던 공통 스타일 적용 */
         body {
             font-family: '맑은 고딕', Malgun Gothic, 돋움, Dotum, sans-serif;
-            max-width: 500px;
-            margin: 50px auto;
+            max-width: 480px;
+            margin: 30px auto;
             padding: 20px;
             background: #f8f9fa;
             border-radius: 10px;
@@ -30,6 +29,7 @@
             border-radius: 6px;
             border: 1px solid #ccc;
             font-size: 16px;
+            box-sizing: border-box;
         }
         button {
             margin-top: 30px;
@@ -41,6 +41,7 @@
             color: white;
             font-size: 18px;
             cursor: pointer;
+            transition: background-color 0.3s ease;
         }
         button:hover {
             background-color: #0056b3;
@@ -61,9 +62,6 @@
     {% endif %}
 
     <form method="POST">
-        <label for="username">아이디</label>
-        <input type="text" id="username" name="username" required>
-
         <label for="password">비밀번호</label>
         <input type="password" id="password" name="password" required>
 
@@ -71,10 +69,10 @@
         <input type="text" id="company" name="company" required>
 
         <label for="phone">전화번호</label>
-        <input type="text" id="phone" name="phone" required>
+        <input type="text" id="phone" name="phone" required placeholder="010-1234-5678">
 
-        <label for="company_code">회사 코드 6자리를 입력해주세요 기사가 가입시 입력해야합니다.</label>
-        <input type="password" id="company_code" name="company_code" maxlength="6" minlength="6" required>
+        <label for="company_code">회사 코드 (6자리)</label>
+        <input type="password" id="company_code" name="company_code" maxlength="6" required>
 
         <button type="submit">가입하기</button>
     </form>
