@@ -80,6 +80,10 @@
 <body>
     <h2>기사 등록</h2>
 
+    {% if error %}
+      <div style="color:red; margin-bottom:10px;">{{ error }}</div>
+    {% endif %}
+
     <form method="POST">
         <input type="text" name="name" placeholder="기사 이름 입력" required>
         <button type="submit">등록</button>
@@ -88,12 +92,20 @@
     <h3>등록된 기사 목록</h3>
     <ul>
         {% for worker in workers %}
-        <li>{{ worker }}</li>
+        <li>
+            {{ worker }}
+            <!-- 삭제 버튼 (POST) -->
+            <form method="POST" action="{{ url_for('delete_worker') }}" style="display:inline;">
+                <input type="hidden" name="name" value="{{ worker }}">
+                <button type="submit" style="color:red; margin-left:10px;" onclick="return confirm('정말 삭제할까요?');">삭제</button>
+            </form>
+        </li>
+        {% else %}
+        <li style="color: #888;">아직 등록된 기사가 없습니다.</li>
         {% endfor %}
     </ul>
 
     <hr>
-
     <form action="{{ url_for('dashboard') }}">
         <button type="submit" style="font-size: 16px;">🏠 메인화면으로 돌아가기</button>
     </form>

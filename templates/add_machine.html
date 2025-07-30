@@ -80,16 +80,37 @@
 <body>
     <h2>장비 등록</h2>
 
+    {% if error %}
+      <div style="color:red; margin-bottom:10px;">{{ error }}</div>
+    {% endif %}
+
     <form method="POST">
-        <input type="text" name="machine_type" placeholder="장비 입력" required>
-        <input type="text" name="model" placeholder="차량번호 입력" required>
-        <button type="submit">등록</button>
+        <label>장비명(모델명)</label>
+        <input type="text" name="machine_name" required placeholder="예: SL600rf, 25톤 등">
+
+        <label>차량번호</label>
+        <input type="text" name="machine_number" required placeholder="예: 001가1234, 등">
+
+        <label>별칭/연식</label>
+        <input type="text" name="machine_alias" placeholder="예: 23년식, 제일비싼굴삭기 등">
+
+        <button type="submit">장비 등록</button>
     </form>
 
     <h3>등록된 장비 목록</h3>
     <ul>
         {% for m in machines %}
-        <li>{{ m.type }} - {{ m.model }}</li>
+        <li>
+            <b>{{ m.name }}</b> / {{ m.number }}
+            {% if m.alias %} / {{ m.alias }}{% endif %}
+            <!-- 삭제 버튼 (form, POST) -->
+            <form method="POST" action="{{ url_for('delete_machine') }}" style="display:inline;">
+                <input type="hidden" name="machine_number" value="{{ m.number }}">
+                <button type="submit" style="color:red; margin-left:10px;" onclick="return confirm('정말 삭제할까요?');">삭제</button>
+            </form>
+        </li>
+        {% else %}
+        <li style="color: #888;">아직 등록된 장비가 없습니다.</li>
         {% endfor %}
     </ul>
 

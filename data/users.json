@@ -1,79 +1,9 @@
 {
-  "A1234": {
+  "홍예크레인boss": {
     "password": "cc0303",
     "role": "boss",
-    "company": "서현중기",
+    "company": "홍예크레인",
     "phone": "01028097135",
-    "company_code": "123456"
-  },
-  "A4321": {
-    "password": "cc0303",
-    "role": "worker",
-    "company": "서현중기",
-    "name": "이기사",
-    "phone": "01028093333"
-  },
-  "A12345": {
-    "password": "cc0303",
-    "role": "boss",
-    "company": "서현꼬질케이중기",
-    "phone": "01012341234",
-    "company_code": "123456"
-  },
-  "A54321": {
-    "password": "cc0303",
-    "role": "worker",
-    "company": "서현꼬질케이중기",
-    "name": "백서현",
-    "phone": "01028097135"
-  },
-  "A123456": {
-    "password": "cc0303",
-    "role": "boss",
-    "company": "지환중기",
-    "phone": "010123412341234",
-    "company_code": "123456"
-  },
-  "A123123": {
-    "password": "cc0303",
-    "role": "worker",
-    "company": "지환중기",
-    "name": "박지환",
-    "phone": "010123123123"
-  },
-  "서현크레인중기boss": {
-    "password": "cc0303",
-    "role": "boss",
-    "company": "서현크레인중기",
-    "phone": "01022332233",
-    "company_code": "123456"
-  },
-  "서현크레인중기중기boss": {
-    "password": "cc0303",
-    "role": "boss",
-    "company": "서현크레인중기중기",
-    "phone": "01028097777",
-    "company_code": "123456"
-  },
-  "꼬질중기boss": {
-    "password": "tjgus123",
-    "role": "boss",
-    "company": "꼬질중기",
-    "phone": "01055554444",
-    "company_code": "112233"
-  },
-  "꼬질중기꼬질": {
-    "password": "cc0303",
-    "role": "worker",
-    "company": "꼬질중기",
-    "name": "꼬질",
-    "phone": "01032323232"
-  },
-  "은정중기boss": {
-    "password": "cc0303",
-    "role": "boss",
-    "company": "은정중기",
-    "phone": "01010101010",
     "company_code": "123456"
   }
 }

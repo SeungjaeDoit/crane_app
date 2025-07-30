@@ -78,17 +78,7 @@
 </style>
 </head>
 <body>
-    <h2>
-        {{ company }}
-        {% if role == 'boss' %}
-            사장님
-        {% elif role == 'worker' %}
-            기사님
-        {% else %}
-            님
-        {% endif %}
-        , 반갑습니다! ({{ username }}님)
-    </h2>
+    <h2>{{ company }} 사장님, 반갑습니다!</h2>
 
     {% if role == 'boss' %}
         <ul style="list-style: none; padding: 0;">
