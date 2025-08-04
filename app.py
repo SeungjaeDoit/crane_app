@@ -356,45 +356,43 @@ def add_job():
 
     company = users[session['username']]['company']
 
+    # GET: 드롭다운 데이터 준비
+    workers = load_json('workers.json', {}).get(company, [])
+    machines = load_json('machines.json', {}).get(company, [])
+    clients = load_json('clients.json', {}).get(company, [])
+    locations = load_json('locations.json', {}).get(company, [])
+
     if request.method == 'POST':
-        # 1. 기사 입력 (드롭다운 + 직접입력)
-        worker_select = request.form.get('worker_select', '').strip()
-        worker_input  = request.form.get('worker_input', '').strip()
-        worker = worker_input if worker_input else worker_select
+        if request.method == 'POST':
+            print("=== [add_job POST 데이터] ===")
+            print(dict(request.form))
+            print("=============================")
+        # 1. 기사 입력
+        worker = request.form.get('worker', '').strip()
 
-        # 2. 장비 입력 (드롭다운 + 직접입력: 3필드)
-        machine_select_name   = request.form.get('machine_select_name', '').strip()
-        machine_select_number = request.form.get('machine_select_number', '').strip()
-        machine_select_alias  = request.form.get('machine_select_alias', '').strip()
-        # 직접입력
-        machine_name_input    = request.form.get('machine_name_input', '').strip()
-        machine_number_input  = request.form.get('machine_number_input', '').strip()
-        machine_alias_input   = request.form.get('machine_alias_input', '').strip()
-        # 실제 사용값
-        machine_name   = machine_name_input if machine_name_input else machine_select_name
-        machine_number = machine_number_input if machine_number_input else machine_select_number
-        machine_alias  = machine_alias_input if machine_alias_input else machine_select_alias
+        # 2. 장비 입력
+        machine_name = request.form.get('machine_name_input', '').strip()
+        machine_number = request.form.get('machine_number_input', '').strip()
+        machine_alias = request.form.get('machine_alias_input', '').strip()
 
-        # 3. 거래처, 위치 (기존대로)
-        client_select   = request.form.get('client_select', '').strip()
-        client_input    = request.form.get('client_input', '').strip()
-        client = client_input if client_input else client_select
-
-        location_select = request.form.get('location_select', '').strip()
-        location_input  = request.form.get('location_input', '').strip()
-        location = location_input if location_input else location_select
+        # 3. 거래처, 위치
+        client = request.form.get('client_input', '').strip()
+        location = request.form.get('location', '').strip()
 
         note = request.form.get('note', '').strip()
         date = request.form.get('date', '').strip()
-        time = request.form.get('time', '').strip()
+
+        # 💡 시간 조합
+        hour = request.form.get('hour', '').strip()
+        minute = request.form.get('minute', '').strip()
+        if hour and minute:
+            time = f"{hour}:{minute}"
+        else:
+            time = ''
 
         # 4. 필수 입력 체크
-        if not worker or not machine_name or not machine_number or not client or not location:
-            workers   = load_json('workers.json', {}).get(company, [])
-            machines  = load_json('machines.json', {}).get(company, [])
-            clients   = load_json('clients.json', {}).get(company, [])
-            locations = load_json('locations.json', {}).get(company, [])
-            error = "기사, 장비명, 차량번호, 거래처, 위치는 반드시 입력(혹은 선택)해야 합니다."
+        if not worker or not machine_name or not machine_number or not client or not location or not date or not time:
+            error = "기사, 장비명, 차량번호, 거래처, 위치, 날짜, 시간은 반드시 입력(혹은 선택)해야 합니다."
             return render_template(
                 'add_job.html',
                 workers=workers,
@@ -402,23 +400,8 @@ def add_job():
                 clients=clients,
                 locations=locations,
                 error=error,
-                prev={
-                    'worker_input': worker_input,
-                    'worker_select': worker_select,
-                    'machine_name_input': machine_name_input,
-                    'machine_number_input': machine_number_input,
-                    'machine_alias_input': machine_alias_input,
-                    'machine_select_name': machine_select_name,
-                    'machine_select_number': machine_select_number,
-                    'machine_select_alias': machine_select_alias,
-                    'client_input': client_input,
-                    'client_select': client_select,
-                    'location_input': location_input,
-                    'location_select': location_select,
-                    'note': note,
-                    'date': date,
-                    'time': time
-                }
+                prev=request.form,
+                job_registered=False
             )
 
         # 5. 작업 등록
@@ -440,20 +423,22 @@ def add_job():
         jobs_db.setdefault(company, []).append(new_job)
         save_json('jobs.json', jobs_db)
 
-        return redirect('/jobs')  # 작업목록으로
-
-    # GET: 드롭다운 데이터 준비
-    workers = load_json('workers.json', {}).get(company, [])
-    machines = load_json('machines.json', {}).get(company, [])
-    clients = load_json('clients.json', {}).get(company, [])
-    locations = load_json('locations.json', {}).get(company, [])
+        return render_template(
+            'add_job.html',
+            workers=workers,
+            machines=machines,
+            clients=clients,
+            locations=locations,
+            job_registered=True
+        )
 
     return render_template(
         'add_job.html',
         workers=workers,
         machines=machines,
         clients=clients,
-        locations=locations
+        locations=locations,
+        job_registered=False
     )
 
 @app.route('/toggle_complete/<int:job_index>')
@@ -526,7 +511,7 @@ def jobs():
     print("===========================")
 
     return render_template(
-        'view_jobs.html',
+        'view_job.html',
         jobs=filtered_jobs,
         username=username,
         role=role,

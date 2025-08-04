@@ -100,17 +100,19 @@
     <h3>등록된 장비 목록</h3>
     <ul>
         {% for m in machines %}
-        <li>
-            <b>{{ m.name }}</b> / {{ m.number }}
-            {% if m.alias %} / {{ m.alias }}{% endif %}
-            <!-- 삭제 버튼 (form, POST) -->
-            <form method="POST" action="{{ url_for('delete_machine') }}" style="display:inline;">
-                <input type="hidden" name="machine_number" value="{{ m.number }}">
-                <button type="submit" style="color:red; margin-left:10px;" onclick="return confirm('정말 삭제할까요?');">삭제</button>
-            </form>
-        </li>
+            {% if m.name and m.number %}
+            <li>
+                <b>{{ m.name }}</b> / {{ m.number }}
+                {% if m.alias %} / {{ m.alias }}{% endif %}
+                <!-- 삭제 버튼 (form, POST) -->
+                <form method="POST" action="{{ url_for('delete_machine') }}" style="display:inline;">
+                    <input type="hidden" name="machine_number" value="{{ m.number }}">
+                    <button type="submit" style="color:red; margin-left:10px;" onclick="return confirm('정말 삭제할까요?');">삭제</button>
+                </form>
+            </li>
+            {% endif %}
         {% else %}
-        <li style="color: #888;">아직 등록된 장비가 없습니다.</li>
+            <li style="color: #888;">아직 등록된 장비가 없습니다.</li>
         {% endfor %}
     </ul>
 

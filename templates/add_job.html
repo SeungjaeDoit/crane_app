@@ -64,13 +64,48 @@
         .inline-selects select {
             width: 50%;
         }
+        #successModal {
+            display: none;
+            position: fixed; left:0; top:0; width:100vw; height:100vh;
+            background:rgba(0,0,0,0.25); justify-content:center; align-items:center; z-index:1000;
+        }
+        #successModal .modal-content {
+            background: white;
+            padding: 28px 40px;
+            border-radius: 12px;
+            text-align: center;
+            min-width: 280px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+        }
+        #successModal .modal-content h3 {
+            margin-bottom: 22px;
+            font-size: 20px;
+        }
+        #successModal button {
+            padding: 10px 22px;
+            border-radius: 7px;
+            margin: 0 10px;
+            font-size: 17px;
+            border: none;
+            cursor: pointer;
+            color: white;
+        }
+        #successModal .keep-btn { background: #2196F3; }
+        #successModal .check-btn { background: #1ab07a; }
+        #successModal .keep-btn:hover { background: #1976D2; }
+        #successModal .check-btn:hover { background: #168c5a; }
     </style>
 </head>
 <body>
 
 <h2>작업 등록</h2>
 
-<form method="POST">
+{% if error %}
+    <div style="color: red; margin-bottom: 10px;">{{ error }}</div>
+{% endif %}
+
+<!-- 작업 등록 폼 -->
+<form method="POST" autocomplete="off">
     <label for="date">날짜</label>
     <input type="date" id="date" name="date" required>
 
@@ -91,35 +126,44 @@
     </div>
 
     <label>기사 선택 또는 직접입력</label>
-<select onchange="document.getElementById('worker_input').value = this.value;">
-    <option value="">선택 안함</option>
-    {% for worker in workers %}
-        <option value="{{ worker['username'] }}">{{ worker['name'] }}</option>
-    {% endfor %}
-</select>
-<input type="text" id="worker_input" name="worker" placeholder="직접입력 또는 드롭다운 선택">
+    <select id="worker_select" onchange="document.getElementById('worker_input').value = this.value;">
+        <option value="">선택 안함</option>
+        {% for worker in workers %}
+            <option value="{{ worker['name'] }}">{{ worker['name'] }}</option>
+        {% endfor %}
+    </select>
+    <input type="text" id="worker_input" name="worker" placeholder="직접입력 또는 드롭다운 선택">
 
     <label>장비 선택 또는 직접입력</label>
-<select 
-  onchange="
-    var opt = this.options[this.selectedIndex];
-    document.getElementById('machine_name_input').value = opt.dataset.name || '';
-    document.getElementById('machine_number_input').value = opt.dataset.number || '';
-    document.getElementById('machine_alias_input').value = opt.dataset.alias || '';
-  ">
-  <option value="">선택 안함</option>
-  {% for m in machines %}
-    <option 
-      data-name="{{ m.name }}" 
-      data-number="{{ m.number }}" 
-      data-alias="{{ m.alias }}">
-      {{ m.name }} / {{ m.number }}{% if m.alias %} / {{ m.alias }}{% endif %}
-    </option>
-  {% endfor %}
-</select>
-<input type="text" id="machine_name_input" name="machine_name_input" placeholder="장비명" required>
-<input type="text" id="machine_number_input" name="machine_number_input" placeholder="차량번호" required>
-<input type="text" id="machine_alias_input" name="machine_alias_input" placeholder="별칭/연식(선택)">
+    <select 
+      onchange="
+        var opt = this.options[this.selectedIndex];
+        document.getElementById('machine_name_input').value = opt.dataset.name || '';
+        document.getElementById('machine_number_input').value = opt.dataset.number || '';
+        document.getElementById('machine_alias_input').value = opt.dataset.alias || '';
+      ">
+      <option value="">선택 안함</option>
+      {% for m in machines %}
+        <option 
+          data-name="{{ m.name }}" 
+          data-number="{{ m.number }}" 
+          data-alias="{{ m.alias }}">
+          {{ m.name }} / {{ m.number }}{% if m.alias %} / {{ m.alias }}{% endif %}
+        </option>
+      {% endfor %}
+    </select>
+    <input type="text" id="machine_name_input" name="machine_name_input" placeholder="장비명" required>
+    <input type="text" id="machine_number_input" name="machine_number_input" placeholder="차량번호" required>
+    <input type="text" id="machine_alias_input" name="machine_alias_input" placeholder="별칭/연식(선택)">
+
+    <label>거래처 선택 또는 직접입력</label>
+    <select onchange="document.getElementById('client_input').value = this.value;">
+        <option value="">선택 안함</option>
+        {% for client in clients %}
+            <option value="{{ client }}">{{ client }}</option>
+        {% endfor %}
+    </select>
+    <input type="text" id="client_input" name="client_input" placeholder="직접입력 또는 드롭다운 선택">
 
     <label>작업 위치 선택 또는 직접입력</label>
     <select onchange="document.getElementById('location_input').value = this.value;">
@@ -138,8 +182,17 @@
 
 <a href="/dashboard">← 대시보드로 돌아가기</a>
 
+<!-- 작업 등록 성공 모달 -->
+<div id="successModal">
+  <div class="modal-content">
+    <h3>작업이 등록되었습니다!</h3>
+    <button class="keep-btn" onclick="closeModal()">페이지 유지</button>
+    <button class="check-btn" onclick="location.href='/jobs'">작업 확인하기</button>
+  </div>
+</div>
+
 <script>
-    // 제출 전에 시, 분을 합쳐서 hidden input으로 전달하는 스크립트 예시
+    // 시/분 조합 → time hidden 전송
     document.querySelector('form').addEventListener('submit', function(e) {
         const hour = document.getElementById('hour').value;
         const minute = document.getElementById('minute').value;
@@ -148,13 +201,21 @@
             e.preventDefault();
             return false;
         }
-        // 시:분 합쳐서 time 값으로 서버에 보냄
         let timeInput = document.createElement('input');
         timeInput.type = 'hidden';
         timeInput.name = 'time';
         timeInput.value = hour + ':' + minute;
         this.appendChild(timeInput);
     });
+
+    // 작업 등록 성공시 모달 표시
+    {% if job_registered %}
+        document.getElementById('successModal').style.display = 'flex';
+    {% endif %}
+
+    function closeModal(){
+        document.getElementById('successModal').style.display = 'none';
+    }
 </script>
 
 </body>

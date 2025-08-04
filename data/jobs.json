@@ -1,3 +1,15 @@
 {
-  "홍예크레인": []
+  "홍예크레인": [
+    {
+      "date": "2025-08-06",
+      "time": "08:20",
+      "worker": "이윤재",
+      "machine_name": "mk80",
+      "machine_number": "007가6743",
+      "machine_alias": "21년식",
+      "client": "DL",
+      "location": "충의로190-1",
+      "note": "120하루"
+    }
+  ]
 }

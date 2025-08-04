@@ -93,7 +93,7 @@
     <ul>
         {% for worker in workers %}
         <li>
-            {{ worker }}
+            {{ worker.name }}
             <!-- 삭제 버튼 (POST) -->
             <form method="POST" action="{{ url_for('delete_worker') }}" style="display:inline;">
                 <input type="hidden" name="name" value="{{ worker }}">
