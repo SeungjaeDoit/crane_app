@@ -86,6 +86,7 @@
 
     <form method="POST">
         <input type="text" name="name" placeholder="기사 이름 입력" required>
+        <input type="text" name="phone" placeholder="전화번호 입력 (예: 01012345678)" required pattern="^\d{10,11}$" title="전화번호는 숫자 10~11자리여야 합니다.">
         <button type="submit">등록</button>
     </form>
 
@@ -93,11 +94,10 @@
     <ul>
         {% for worker in workers %}
         <li>
-            {{ worker.name }}
+            {{ worker.name }} ({{ worker.phone }})
             <!-- 삭제 버튼 (POST) -->
-            <form method="POST" action="{{ url_for('delete_worker') }}" style="display:inline;">
-                <input type="hidden" name="name" value="{{ worker }}">
-                <button type="submit" style="color:red; margin-left:10px;" onclick="return confirm('정말 삭제할까요?');">삭제</button>
+            <form method="POST" action="{{ url_for('delete_worker', username=worker.username) }}" style="display:inline;">
+                <button type="submit" onclick="return confirm('정말 삭제하시겠습니까?');">삭제</button>
             </form>
         </li>
         {% else %}

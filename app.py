@@ -7,7 +7,6 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 app.permanent_session_lifetime = timedelta(days=7)
 
-# 파일 저장 가이드
 DATA_DIR = 'data'
 
 def load_json(filename, default):
@@ -20,33 +19,26 @@ def load_json(filename, default):
 def save_json(filename, data):
     os.makedirs(DATA_DIR, exist_ok=True)
     path = os.path.join(DATA_DIR, filename)
-    with open(path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-# 기존 데이터는 하나만 로드 (edit/delete에서 다시 로드할 것이긴 해도, 사용 안해도 되는 방식)
-users = load_json('users.json', {})
-workers = load_json('workers.json', {})
-machines = load_json('machines.json', {})
-clients = load_json('clients.json', {})
+    try:
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"!!! save_json error: {e}")
 
 @app.route('/')
 def home():
-    print(">>> / 라우트 진입")
     return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    print(">>> /login 라우트 진입, method =", request.method)
     error = None
 
     if request.method == 'POST':
         phone = request.form.get('phone')
         password = request.form.get('password')
 
-        # users.json에서 모든 사용자 로드
         users_db = load_json('users.json', {})
 
-        # 전화번호로 사용자 찾기
         user = None
         username = None
         for u_name, u_data in users_db.items():
@@ -55,23 +47,23 @@ def login():
                 username = u_name
                 break
 
-        # 인증 처리
         if user and user.get('password') == password:
-            # 세션에 사용자 정보 저장
+            if user.get('role') == 'worker' and user.get('status', 'active') == 'pending':
+                error = '승인 대기중입니다. 사장님의 승인을 기다려주세요.'
+                return render_template('login.html', error=error)
+
             session.permanent = True
             session['username'] = username
-            session['role']     = user.get('role')       # 'boss' 또는 'worker'
-            session['company']  = user.get('company', '') # 회사명
+            session['role'] = user.get('role')
+            session['company'] = user.get('company', '')
 
-            # 역할별 대시보드로 분기
             if user['role'] == 'boss':
-                return redirect(url_for('dashboard'))            # 사장 대시보드
+                return redirect(url_for('dashboard'))
             else:
-                return redirect(url_for('dashboard_worker'))    # 기사 대시보드
+                return redirect(url_for('dashboard_worker'))
         else:
             error = '휴대폰번호 또는 비밀번호가 올바르지 않습니다.'
 
-    # GET 요청 또는 인증 실패 시
     return render_template('login.html', error=error)
 
 @app.route('/logout')
@@ -79,32 +71,54 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-from flask import session, redirect, url_for, render_template
-
 @app.route('/dashboard')
 def dashboard():
-    # 1) 세션에서 사용자·역할 정보 꺼내기
     username = session.get('username')
-    role     = session.get('role')
-
-    # 2) 로그인 여부 및 사장 여부 확인
+    role = session.get('role')
     if not username or role != 'boss':
         return redirect(url_for('login'))
 
-    # 3) users.json 에서 해당 사용자 정보 로드 (company 확인용)
-    users_db  = load_json('users.json', {})
+    users_db = load_json('users.json', {})
     user_info = users_db.get(username, {})
-    company   = user_info.get('company', '')
+    company = user_info.get('company', '')
 
-    # 4) 템플릿에 company와 role 모두 전달
     return render_template(
         'dashboard.html',
         company=company,
         role=role
     )
 
+@app.route('/batch_action_jobs', methods=['POST'])
+def batch_action_jobs():
+    if 'username' not in session:
+        return redirect(url_for('login'))
 
-    
+    username = session['username']
+    users_db = load_json('users.json', {})
+    company = users_db.get(username, {}).get('company')
+
+    jobs_db = load_json('jobs.json', {})
+    job_list = jobs_db.get(company, [])
+
+    selected_indices = request.form.getlist('selected_jobs')  # checkbox name이 selected_jobs여야 함
+
+    action = request.form.get('action')  # 예: 'delete' 또는 'complete'
+
+    if action == 'delete':
+        # 인덱스 역순으로 삭제 (인덱스 밀림 방지)
+        for index_str in sorted(selected_indices, reverse=True):
+            index = int(index_str)
+            if 0 <= index < len(job_list):
+                del job_list[index]
+    elif action == 'complete':
+        for index_str in selected_indices:
+            index = int(index_str)
+            if 0 <= index < len(job_list):
+                job_list[index]['status'] = '완료'
+
+    save_json('jobs.json', jobs_db)
+    return redirect(url_for('jobs'))
+
 @app.route('/dashboard_worker')
 def dashboard_worker():
     username = session.get('username')
@@ -118,14 +132,14 @@ def dashboard_worker():
         return "권한이 없습니다.", 403
 
     company = user_info['company']
+    worker_name = user_info['name']  # 로그인한 기사의 이름 (ex: "이윤재")
 
     jobs_db = load_json('jobs.json', {})
     job_list = jobs_db.get(company, [])
 
-    # 현재 로그인한 기사의 작업만 필터링
-    my_jobs = [job for job in job_list if job.get('worker') == username]
+    # 작업 worker 필드가 로그인한 기사의 이름과 같은지 필터링
+    my_jobs = [job for job in job_list if job.get('worker') == worker_name]
 
-    # 작업 상태가 없으면 기본값 '진행중' 설정
     for job in my_jobs:
         if 'status' not in job:
             job['status'] = '진행중'
@@ -142,24 +156,20 @@ def register_boss():
         phone = request.form['phone'].strip()
         input_code = request.form['company_code'].strip()
 
-        # 회사명 중복 검사
         if company in companies:
             error = '이미 등록된 회사명입니다.'
             return render_template('register_boss.html', error=error)
 
-        # 회사 코드 길이 체크
         if len(input_code) != 6:
             error = '회사 코드는 6자리여야 합니다.'
             return render_template('register_boss.html', error=error)
 
-        # 전화번호 중복 검사 (같은 회사명은 없으니 전화번호만 중복 체크)
         users_db = load_json('users.json', {})
         for user in users_db.values():
             if user.get('phone') == phone:
                 error = '해당 전화번호로 이미 가입된 계정이 있습니다.'
                 return render_template('register_boss.html', error=error)
 
-        # username 자동 생성 (회사명 + 'boss')
         base_username = f"{company}boss"
         username = base_username
         suffix = 1
@@ -167,7 +177,6 @@ def register_boss():
             username = f"{base_username}{suffix}"
             suffix += 1
 
-        # 회원가입 처리
         users_db[username] = {
             'password': password,
             'role': 'boss',
@@ -177,20 +186,17 @@ def register_boss():
         }
         save_json('users.json', users_db)
 
-        # companies.json에 새 회사와 코드 등록
         companies[company] = {
             'code': input_code,
             'phone': phone
         }
         save_json('companies.json', companies)
 
-        # 관련 JSON 초기화 (회사별 빈 리스트 생성)
         save_json('workers.json', {**load_json('workers.json', {}), company: []})
         save_json('machines.json', {**load_json('machines.json', {}), company: []})
         save_json('clients.json', {**load_json('clients.json', {}), company: []})
         save_json('jobs.json', {**load_json('jobs.json', {}), company: []})
 
-        # 로그인 세션 설정
         session['username'] = username
 
         return redirect(url_for('dashboard'))
@@ -199,114 +205,129 @@ def register_boss():
 
 @app.route('/register/worker', methods=['GET', 'POST'])
 def register_worker():
-    companies = load_json('companies.json', {})
+    try:
+        companies = load_json('companies.json', {})
 
-    if request.method == 'POST':
-        name = request.form['name']
-        phone = request.form['phone']
-        company = request.form['company']
-        input_code = request.form['company_code']
-        password = request.form['password']
+        if request.method == 'POST':
+            name = request.form.get('name', '').strip()
+            phone = request.form.get('phone', '').strip()
+            company = request.form.get('company', '').strip()
+            input_code = request.form.get('company_code', '').strip()
+            password = request.form.get('password', '').strip()
 
-        # 회사명 존재 여부 확인
-        if company not in companies:
-            error = '존재하지 않는 회사명입니다.'
-            return render_template('register_worker.html', companies=sorted(companies.keys()), error=error)
-
-        # 회사 코드 인증
-        if companies[company]['code'] != input_code:
-            error = '회사 코드가 올바르지 않습니다.'
-            return render_template('register_worker.html', companies=sorted(companies.keys()), error=error)
-
-        # 전화번호 중복 검사
-        users_db = load_json('users.json', {})
-        for user in users_db.values():
-            if user.get('company') == company and user.get('phone') == phone:
-                error = '해당 전화번호로 이미 가입된 계정이 있습니다.'
+            if company not in companies:
+                error = '존재하지 않는 회사명입니다.'
                 return render_template('register_worker.html', companies=sorted(companies.keys()), error=error)
 
-        # username 자동 생성 (회사명 + 이름 + 중복 방지 숫자)
-        base_username = f"{company.strip()}{name.strip()}"
-        username = base_username
-        suffix = 1
-        while username in users_db:
-            username = f"{base_username}{suffix}"
-            suffix += 1
+            if companies[company]['code'] != input_code:
+                error = '회사 코드가 올바르지 않습니다.'
+                return render_template('register_worker.html', companies=sorted(companies.keys()), error=error)
 
-        # 회원가입 처리
-        users_db[username] = {
-            'password': password,
-            'role': 'worker',
-            'company': company,
-            'name': name,
-            'phone': phone
-        }
-        save_json('users.json', users_db)
+            users_db = load_json('users.json', {})
+            for user in users_db.values():
+                if user.get('company') == company and user.get('phone') == phone:
+                    error = '해당 전화번호로 이미 가입된 계정이 있습니다.'
+                    return render_template('register_worker.html', companies=sorted(companies.keys()), error=error)
 
-        # workers.json에도 username 포함해 자동 등록
-        workers_db = load_json('workers.json', {})
-        workers_db.setdefault(company, []).append({
-            'username': username,
-            'name': name,
-            'phone': phone
-        })
-        save_json('workers.json', workers_db)
+            base_username = f"{company}{name}"
+            username = base_username
+            suffix = 1
+            while username in users_db:
+                username = f"{base_username}{suffix}"
+                suffix += 1
 
-        # 로그인 세션 설정
-        session['username'] = username
-        return redirect(url_for('dashboard'))
+            users_db[username] = {
+                'password': password,
+                'role': 'worker',
+                'company': company,
+                'name': name,
+                'phone': phone,
+                'status': 'pending'
+            }
+            save_json('users.json', users_db)
 
-    return render_template('register_worker.html', companies=sorted(companies.keys()))
+            workers_db = load_json('workers.json', {})
+            workers_db.setdefault(company, [])
+            workers_db[company] = [
+                w for w in workers_db[company] if w.get('phone') != phone
+            ]
+            workers_db[company].append({
+                'username': username,
+                'name': name,
+                'phone': phone,
+                'role': 'worker',
+                'status': 'pending'
+            })
+            save_json('workers.json', workers_db)
+
+            return render_template(
+                'register_worker_pending.html',
+                name=name,
+                company=company
+            )
+
+        return render_template('register_worker.html', companies=sorted(companies.keys()))
+    
+    except Exception as e:
+        import traceback
+        return f"<h2>서버 오류 발생:<br>{e}</h2><pre>{traceback.format_exc()}</pre>"
 
 @app.route('/add_worker', methods=['GET', 'POST'])
 def add_worker():
     if 'username' not in session:
         return redirect('/login')
 
-    company = users[session['username']]['company']
+    users_db = load_json('users.json', {})
+    company = users_db[session['username']]['company']
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
-        if not name:
-            error = "기사 이름을 입력해 주세요."
-            workers = load_json('workers.json', {}).get(company, [])
+        phone = request.form.get('phone', '').strip()
+
+        if not name or not phone:
+            workers_db = load_json('workers.json', {})
+            workers = workers_db.get(company, [])
+            error = "기사 이름과 전화번호를 모두 입력해 주세요."
             return render_template('add_worker.html', workers=workers, error=error)
 
+        # 중복 검사 (이름 또는 전화번호가 동일한 기사 존재 시)
         workers_db = load_json('workers.json', {})
         workers = workers_db.get(company, [])
-        # 중복 등록 방지
-        if name not in workers:
-            workers.append(name)
-            workers_db[company] = workers
-            save_json('workers.json', workers_db)
+        for w in workers:
+            if w.get('name') == name or w.get('phone') == phone:
+                error = "이미 등록된 기사명 또는 전화번호입니다."
+                return render_template('add_worker.html', workers=workers, error=error)
+
+        # username 생성 (회사명 + 이름)
+        username = f"{company}{name}"
+
+        # workers.json에 저장
+        new_worker = {
+            "username": username,
+            "name": name,
+            "phone": phone,
+            "role": "worker",
+            "status": "active"
+        }
+
+        workers.append(new_worker)
+        workers_db[company] = workers
+        save_json('workers.json', workers_db)
 
         return redirect('/add_worker')
 
-    workers = load_json('workers.json', {}).get(company, [])
-    return render_template('add_worker.html', workers=workers)
-
-@app.route('/delete_worker', methods=['POST'])
-def delete_worker():
-    if 'username' not in session:
-        return redirect('/login')
-
-    company = users[session['username']]['company']
-    name = request.form.get('name', '').strip()
-
+    # GET 요청 시
     workers_db = load_json('workers.json', {})
     workers = workers_db.get(company, [])
-    workers = [w for w in workers if w != name]
-    workers_db[company] = workers
-    save_json('workers.json', workers_db)
-
-    return redirect('/add_worker')
+    return render_template('add_worker.html', workers=workers)
 
 @app.route('/add_machine', methods=['GET', 'POST'])
 def add_machine():
     if 'username' not in session:
         return redirect('/login')
 
-    company = users[session['username']]['company']
+    users_db = load_json('users.json', {})
+    company = users_db[session['username']]['company']
 
     if request.method == 'POST':
         name = request.form.get('machine_name', '').strip()
@@ -314,8 +335,9 @@ def add_machine():
         alias = request.form.get('machine_alias', '').strip()
 
         if not name or not number:
+            machines_db = load_json('machines.json', {})
+            machines = machines_db.get(company, [])
             error = "장비명과 차량번호는 필수 입력입니다."
-            machines = load_json('machines.json', {}).get(company, [])
             return render_template('add_machine.html', machines=machines, error=error)
 
         new_machine = {
@@ -330,7 +352,8 @@ def add_machine():
 
         return redirect('/add_machine')
 
-    machines = load_json('machines.json', {}).get(company, [])
+    machines_db = load_json('machines.json', {})
+    machines = machines_db.get(company, [])
     return render_template('add_machine.html', machines=machines)
 
 @app.route('/delete_machine', methods=['POST'])
@@ -338,7 +361,8 @@ def delete_machine():
     if 'username' not in session:
         return redirect('/login')
 
-    company = users[session['username']]['company']
+    users_db = load_json('users.json', {})
+    company = users_db[session['username']]['company']
     number = request.form.get('machine_number', '').strip()
 
     machines_db = load_json('machines.json', {})
@@ -354,7 +378,8 @@ def add_job():
     if 'username' not in session:
         return redirect('/login')
 
-    company = users[session['username']]['company']
+    users_db = load_json('users.json', {})
+    company = users_db.get(session['username'], {}).get('company', '')
 
     # GET: 드롭다운 데이터 준비
     workers = load_json('workers.json', {}).get(company, [])
@@ -363,35 +388,22 @@ def add_job():
     locations = load_json('locations.json', {}).get(company, [])
 
     if request.method == 'POST':
-        if request.method == 'POST':
-            print("=== [add_job POST 데이터] ===")
-            print(dict(request.form))
-            print("=============================")
-        # 1. 기사 입력
-        worker = request.form.get('worker', '').strip()
+        # 폼 데이터 변수로 추출
+        date = request.form.get('date', '').strip()
+        hour = request.form.get('hour', '').strip()
+        minute = request.form.get('minute', '').strip()
+        time = f"{hour}:{minute}" if hour and minute else ''
 
-        # 2. 장비 입력
+        worker = request.form.get('worker', '').strip()
         machine_name = request.form.get('machine_name_input', '').strip()
         machine_number = request.form.get('machine_number_input', '').strip()
         machine_alias = request.form.get('machine_alias_input', '').strip()
-
-        # 3. 거래처, 위치
         client = request.form.get('client_input', '').strip()
         location = request.form.get('location', '').strip()
-
         note = request.form.get('note', '').strip()
-        date = request.form.get('date', '').strip()
 
-        # 💡 시간 조합
-        hour = request.form.get('hour', '').strip()
-        minute = request.form.get('minute', '').strip()
-        if hour and minute:
-            time = f"{hour}:{minute}"
-        else:
-            time = ''
-
-        # 4. 필수 입력 체크
-        if not worker or not machine_name or not machine_number or not client or not location or not date or not time:
+        # 필수 입력 체크
+        if not (worker and machine_name and machine_number and client and location and date and time):
             error = "기사, 장비명, 차량번호, 거래처, 위치, 날짜, 시간은 반드시 입력(혹은 선택)해야 합니다."
             return render_template(
                 'add_job.html',
@@ -404,7 +416,6 @@ def add_job():
                 job_registered=False
             )
 
-        # 5. 작업 등록
         new_job = {
             "date": date,
             "time": time,
@@ -416,8 +427,6 @@ def add_job():
             "location": location,
             "note": note
         }
-
-        print("새 작업 등록 데이터:", new_job)
 
         jobs_db = load_json('jobs.json', {})
         jobs_db.setdefault(company, []).append(new_job)
@@ -461,16 +470,137 @@ def toggle_complete(job_index):
 
     job = job_list[job_index]
 
-    # 권한 확인: 해당 작업의 기사와 로그인 사용자 일치 여부 체크
-    if job.get('worker') != username:
+    is_worker = user_info['role'] == 'worker'
+    is_boss = user_info['role'] == 'boss'
+
+    if is_worker and job.get('worker') != username:
         return "권한이 없습니다.", 403
 
-    # 상태 토글
     job['status'] = '완료' if job.get('status') != '완료' else '진행중'
-
     save_json('jobs.json', jobs_db)
 
-    return redirect(url_for('dashboard_worker'))
+    if is_boss:
+        return redirect(url_for('jobs'))
+    else:
+        return redirect(url_for('dashboard_worker'))
+
+@app.route('/manage_workers')
+def manage_workers():
+    if 'username' not in session or session.get('role') != 'boss':
+        return redirect('/login')
+
+    company = session['company']
+    workers_db = load_json('workers.json', {})
+    users_db = load_json('users.json', {})
+
+    workers = workers_db.get(company, [])
+
+    # workers 리스트에 users.json의 role 최신 정보 덮어쓰기
+    for w in workers:
+        user_info = users_db.get(w['username'])
+        if user_info:
+            w['role'] = user_info.get('role', 'worker')
+        else:
+            w['role'] = 'worker'  # 기본 권한
+
+    return render_template('manage_workers.html', workers=workers)
+
+@app.route('/approve_worker/<username>', methods=['POST'])
+def approve_worker(username):
+    if 'username' not in session or session.get('role') != 'boss':
+        return redirect('/login')
+    company = session['company']
+
+    users_db = load_json('users.json', {})
+    workers_db = load_json('workers.json', {})
+
+    if username in users_db and users_db[username]['company'] == company:
+        users_db[username]['status'] = 'active'
+        save_json('users.json', users_db)
+
+        for w in workers_db.get(company, []):
+            if w['username'] == username:
+                w['status'] = 'active'
+                break
+        save_json('workers.json', workers_db)
+    return redirect('/manage_workers')
+
+@app.route('/delete_worker/<username>', methods=['POST'])
+def delete_worker(username):
+    if 'username' not in session or session.get('role') != 'boss':
+        return redirect('/login')
+    company = session['company']
+    users_db = load_json('users.json', {})
+    workers_db = load_json('workers.json', {})
+
+    if username in users_db and users_db[username]['company'] == company:
+        del users_db[username]
+        save_json('users.json', users_db)
+
+    if company in workers_db:
+        workers_db[company] = [w for w in workers_db[company] if w.get('username') != username]
+        save_json('workers.json', workers_db)
+    else:
+        workers_db[company] = []
+        save_json('workers.json', workers_db)
+
+    return redirect('/manage_workers')
+
+@app.route('/grant_manager/<username>', methods=['POST'])
+def grant_manager(username):
+    if 'username' not in session or session.get('role') != 'boss':
+        return redirect('/login')
+    company = session['company']
+    users_db = load_json('users.json', {})
+
+    if username in users_db and users_db[username]['company'] == company:
+        users_db[username]['role'] = 'boss'
+        save_json('users.json', users_db)
+
+    return redirect('/manage_workers')
+
+@app.route('/revoke_manager/<username>', methods=['POST'])
+def revoke_manager(username):
+    if 'username' not in session or session.get('role') != 'boss':
+        return redirect('/login')
+    company = session['company']
+    users_db = load_json('users.json', {})
+
+    if username in users_db and users_db[username]['company'] == company:
+        users_db[username]['role'] = 'worker'
+        save_json('users.json', users_db)
+
+    return redirect('/manage_workers')
+
+@app.route('/update_worker/<username>', methods=['GET', 'POST'])
+def update_worker(username):
+    if 'username' not in session or session.get('role') != 'boss':
+        return redirect('/login')
+    company = session['company']
+    users_db = load_json('users.json', {})
+    workers_db = load_json('workers.json', {})
+
+    user = users_db.get(username)
+    if not user or user['company'] != company:
+        return redirect('/manage_workers')
+
+    if request.method == 'POST':
+        name = request.form['name']
+        phone = request.form['phone']
+        user['name'] = name
+        user['phone'] = phone
+        save_json('users.json', users_db)
+
+        for w in workers_db.get(company, []):
+            if w['username'] == username:
+                w['name'] = name
+                w['phone'] = phone
+                break
+        save_json('workers.json', workers_db)
+
+        return redirect('/manage_workers')
+
+    return render_template('update_worker.html', user=user)
 
 @app.route('/jobs')
 def jobs():
@@ -478,25 +608,26 @@ def jobs():
         return redirect('/login')
 
     username = session['username']
-    role = users[username]['role']
-    company = users[username]['company']
+    users_db = load_json('users.json', {})
+    role = users_db.get(username, {}).get('role')
+    company = users_db.get(username, {}).get('company')
 
-    # ✅ 항상 최신 데이터 불러오기
     jobs_db = load_json('jobs.json', {})
     job_list = jobs_db.get(company, [])
+    print("=== 작업 목록 ===")
+    for job in job_list:
+        print(f"날짜: {job.get('date')}, 요청사항 길이: {len(job.get('note', ''))}")
 
-    # 🔍 검색 조건 받기
     q_worker = request.args.get('worker', '').strip()
     q_machine = request.args.get('machine', '').strip()
     q_client = request.args.get('client', '').strip()
     q_date = request.args.get('date', '').strip()
 
-    # 🔍 필터링
     filtered_jobs = []
     for job in job_list:
         if q_worker and q_worker not in job.get('worker', ''):
             continue
-        if q_machine and q_machine not in job.get('machine', ''):
+        if q_machine and q_machine not in job.get('machine_name', ''):
             continue
         if q_client and q_client not in job.get('client', ''):
             continue
@@ -504,29 +635,22 @@ def jobs():
             continue
         filtered_jobs.append(job)
 
-    # 🔎 디버깅 출력
-    print("=== [jobs 라우트 디버깅] ===")
-    print(f"검색 조건: worker={q_worker}, machine={q_machine}, client={q_client}, date={q_date}")
-    print(f"검색 결과 {len(filtered_jobs)}건")
-    print("===========================")
-
     return render_template(
         'view_job.html',
         jobs=filtered_jobs,
         username=username,
         role=role,
-        request=request  # 템플릿에서 request.args 사용 위해 필요
+        request=request
     )
 
 @app.route('/edit_job/<int:job_index>', methods=['GET', 'POST'])
 def edit_job(job_index):
     if 'username' not in session:
         return redirect('/login')
-
     username = session['username']
-    company = users[username]['company']
+    users_db = load_json('users.json', {})
+    company = users_db.get(username, {}).get('company')
 
-    # ✅ jobs.json 파일 로드
     jobs_db = load_json('jobs.json', {})
     job_list = jobs_db.get(company, [])
 
@@ -536,29 +660,20 @@ def edit_job(job_index):
     job = job_list[job_index]
 
     if request.method == 'POST':
-        job['date'] = request.form['date']
-        job['time'] = request.form['time']
-        job['worker'] = request.form['worker']
-        job['machine'] = request.form['machine']
-        job['client'] = request.form['client']
-        job['location'] = request.form['location']
-        job['note'] = request.form['note']
-
-        # ✅ 수정 후 저장
+        job['date'] = request.form.get('date', '')
+        job['time'] = request.form.get('time', '')
+        job['worker'] = request.form.get('worker', '')
+        job['machine_name'] = request.form.get('machine_name', '')
+        job['machine_number'] = request.form.get('machine_number', '')
+        job['machine_alias'] = request.form.get('machine_alias', '')
+        job['client'] = request.form.get('client', '')
+        job['location'] = request.form.get('location', '')
+        job['note'] = request.form.get('note', '')
         save_json('jobs.json', jobs_db)
+        return redirect(url_for('jobs'))
 
-        # ✅ 검색 조건 유지
-        query_args = {
-            k.replace('filter_', ''): v
-            for k, v in request.form.items()
-            if k.startswith('filter_') and v
-        }
-
-        return redirect(url_for('jobs', **query_args))
-
-    # ✅ 드롭다운 데이터
-    workers = load_json('workers.json', {}).get(company, [])
     machines = load_json('machines.json', {}).get(company, [])
+    workers = load_json('workers.json', {}).get(company, [])
     clients = load_json('clients.json', {}).get(company, [])
     locations = load_json('locations.json', {}).get(company, [])
 
@@ -566,12 +681,31 @@ def edit_job(job_index):
         'edit_job.html',
         job=job,
         job_index=job_index,
-        workers=workers,
         machines=machines,
+        workers=workers,
         clients=clients,
-        locations=locations,
-        request=request  # 필터 유지용
+        locations=locations
     )
+
+@app.route('/delete_job/<int:job_index>')
+def delete_job(job_index):
+    if 'username' not in session:
+        return redirect('/login')
+
+    username = session['username']
+    users_db = load_json('users.json', {})
+    company = users_db.get(username, {}).get('company')
+
+    jobs_db = load_json('jobs.json', {})
+    job_list = jobs_db.get(company, [])
+
+    if job_index >= len(job_list):
+        return "작업을 찾을 수 없습니다.", 404
+
+    del job_list[job_index]
+    save_json('jobs.json', jobs_db)
+
+    return redirect(url_for('jobs', **request.args))
 
 @app.route('/profile')
 def profile():
@@ -587,12 +721,13 @@ def company_info():
         return redirect(url_for('login'))
 
     username = session['username']
-    user = users.get(username)
+    users_db = load_json('users.json', {})
+    user = users_db.get(username, {})
 
-    if not user or user['role'] != 'boss':
+    if not user or user.get('role') != 'boss':
         return "권한이 없습니다.", 403
 
-    company = user['company']
+    company = user.get('company')
     companies = load_json('companies.json', {})
     company_info = companies.get(company, {})
 
@@ -605,29 +740,22 @@ def company_info():
         new_password = request.form['password']
         new_company_code = request.form['company_code']
 
-        # 간단한 유효성 검사
         if len(new_company_code) != 6:
             error = '회사 코드는 6자리여야 합니다.'
         elif new_company_name != company and new_company_name in companies:
             error = '이미 존재하는 회사명입니다.'
         else:
-            # users.json 수정 - 회사명, 전화번호, 비밀번호 변경
             if new_company_name != company:
-                # 회사명 변경시 users 딕셔너리 내 모든 관련 데이터(사장, 기사 등) 회사명 변경 필요
-                # 간단하게 사장만 변경 예시 (실제로는 기사도 함께 처리하는게 좋음)
-                users[username]['company'] = new_company_name
-
-                # companies.json 회사명 변경 (이름 키 변경)
+                users_db[username]['company'] = new_company_name
                 companies[new_company_name] = companies.pop(company)
-                company = new_company_name  # 회사명 변수도 변경
+                company = new_company_name
 
-            users[username]['phone'] = new_phone
+            users_db[username]['phone'] = new_phone
             if new_password.strip():
-                users[username]['password'] = new_password
+                users_db[username]['password'] = new_password
 
-            save_json('users.json', users)
+            save_json('users.json', users_db)
 
-            # companies.json 수정 - 회사 전화번호, 코드 변경
             companies[company]['phone'] = new_phone
             companies[company]['code'] = new_company_code
             save_json('companies.json', companies)
@@ -643,25 +771,6 @@ def company_info():
         error=error,
         success=success
     )
-
-@app.route('/delete_job/<int:job_index>')
-def delete_job(job_index):
-    if 'username' not in session:
-        return redirect('/login')
-
-    username = session['username']
-    company = users[username]['company']
-
-    jobs_db = load_json('jobs.json', {})  # ← 여기가 빠져있음
-    job_list = jobs_db.get(company, [])
-
-    if job_index >= len(job_list):
-        return "작업을 찾을 수 없습니다.", 404
-
-    del job_list[job_index]
-    save_json('jobs.json', jobs_db)
-
-    return redirect(url_for('jobs', **request.args))
 
 if __name__ == '__main__':
     app.run(debug=True)

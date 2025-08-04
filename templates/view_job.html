@@ -1,308 +1,212 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8" />
-    <title>작업 목록</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 20px;
-            background: #f4f4f4;
-            border-radius: 10px;
-        }
-        h2 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        th, td {
-            padding: 12px 10px;
-            text-align: center;
-            border-bottom: 1px solid #ddd;
-            word-break: break-word;
-            vertical-align: top;
-        }
-        th {
-            background-color: #eeeeee;
-        }
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-        .btn {
-            display: inline-block;
-            padding: 6px 12px;
-            font-size: 14px;
-            border-radius: 5px;
-            text-decoration: none;
-            color: white;
-            cursor: pointer;
-            user-select: none;
-        }
-        .edit-btn {
-            background-color: #2196F3;
-        }
-        .edit-btn:hover {
-            background-color: #1976D2;
-        }
-        .delete-btn {
-            background-color: #f44336;
-        }
-        .delete-btn:hover {
-            background-color: #d32f2f;
-        }
-        .actions {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
-        a.back-link {
-            display: block;
-            margin-top: 30px;
-            text-align: center;
-            color: #555;
-            text-decoration: none;
-        }
-        a.back-link:hover {
-            text-decoration: underline;
-        }
-        /* 수정내역 영역 스타일 */
-        .history-toggle-btn {
-            margin-top: 5px;
-            font-size: 12px;
-            cursor: pointer;
-            background: #ccc;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            user-select: none;
-        }
-        .history-toggle-btn:hover {
-            background: #bbb;
-        }
-        .history-container {
-            display: none;
-            max-height: 150px;
-            overflow-y: auto;
-            border: 1px solid #ccc;
-            padding: 5px;
-            margin-top: 5px;
-            background: #f9f9f9;
-            text-align: left;
-            font-size: 12px;
-            white-space: pre-wrap;
-        }
-        /* 삭제 확인 모달 스타일 */
-        #deleteModal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        #deleteModal .modal-content {
-            background: white;
-            padding: 20px 30px;
-            border-radius: 10px;
-            max-width: 320px;
-            width: 90%;
-            box-sizing: border-box;
-            text-align: center;
-            box-shadow: 0 0 10px rgba(0,0,0,0.25);
-        }
-        #deleteModal .modal-content p {
-            font-size: 18px;
-            margin-bottom: 25px;
-        }
-        #deleteModal .modal-buttons button {
-            padding: 10px 20px;
-            font-size: 16px;
-            border: none;
-            border-radius: 6px;
-            margin: 0 10px;
-            cursor: pointer;
-            user-select: none;
-        }
-        #deleteModal .btn-delete-confirm {
-            background-color: #f44336;
-            color: white;
-        }
-        #deleteModal .btn-delete-confirm:hover {
-            background-color: #d32f2f;
-        }
-        #deleteModal .btn-cancel {
-            background-color: #ccc;
-        }
-        #deleteModal .btn-cancel:hover {
-            background-color: #aaa;
-        }
-        /* 반응형 */
-        @media (max-width: 600px) {
-            body {
-                margin: 20px 10px;
-                padding: 10px;
-            }
-            th, td {
-                padding: 10px 5px;
-                font-size: 14px;
-            }
-            .btn {
-                padding: 6px 8px;
-                font-size: 13px;
-            }
-            .history-toggle-btn {
-                font-size: 11px;
-                padding: 3px 6px;
-            }
-            .history-container {
-                font-size: 11px;
-            }
-            #deleteModal .modal-content {
-                padding: 15px 20px;
-                max-width: 280px;
-            }
-            #deleteModal .modal-content p {
-                font-size: 16px;
-            }
-            #deleteModal .modal-buttons button {
-                font-size: 14px;
-                padding: 8px 16px;
-                margin: 0 5px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>작업 전체 목록</title>
+  <style>
+    body { font-family: sans-serif; max-width: 950px; margin:40px auto; padding:20px; background:#f4f4f4; border-radius:12px;}
+    h2 { text-align: center; margin-bottom: 28px;}
+    form.search-bar { text-align:center; margin-bottom:22px;}
+    form.search-bar input, form.search-bar select { padding:7px 10px; margin-right:7px; border-radius:6px; border:1px solid #ccc; font-size:15px;}
+    form.search-bar button { padding:7px 18px; border-radius:6px; border:none; background:#2196F3; color:white; font-size:15px; cursor:pointer;}
+    form.search-bar a { margin-left:7px; color:#2196F3; text-decoration:underline;}
+    table { width:100%; border-collapse:collapse; background:white; border-radius:10px; overflow:hidden;}
+    th, td { padding:12px 10px; text-align:center; border-bottom:1px solid #ddd; word-break:break-word;}
+    th { background-color:#eeeeee; }
+    tr:hover { background-color:#f1f1f1;}
+    .btn {
+      display: block;        /* 세로 정렬 */
+      width: 80px;
+      padding:7px 13px;
+      border-radius:6px;
+      color:white;
+      font-size:14px;
+      border:none;
+      cursor:pointer;
+      margin-bottom: 6px;
+      text-align: center;
+      text-decoration: none;
+    }
+    .edit-btn { background:#007bff; }
+    .edit-btn:hover { background:#0056b3; }
+    .complete-btn { background:#28a745; }
+    .complete-btn:hover { background:#218838; }
+    .undo-btn { background:#ff9800; }
+    .undo-btn:hover { background:#e65100; }
+    .delete-btn { background:#f44336; }
+    .delete-btn:hover { background:#d32f2f; }
+
+    .action-buttons { margin-top: 12px; }
+    .action-buttons button {
+      padding: 8px 16px;
+      margin-right: 8px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .delete-selected-btn { background-color: #f44336; color: white; }
+    .delete-selected-btn:hover { background-color: #d32f2f; }
+    .complete-all-btn { background-color: #28a745; color: white; }
+    .complete-all-btn:hover { background-color: #218838; }
+
+    .more-link, .copy-btn {
+      color: #2196F3;
+      cursor: pointer;
+      font-size: 13px;
+      text-decoration: underline;
+      margin-left: 5px;
+    }
+
+    .copy-btn {
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
+  <h2>전체 작업 관리</h2>
+  <form class="search-bar" method="get">
+    <input type="text" name="worker" placeholder="기사명" value="{{ request.args.get('worker', '') }}">
+    <input type="text" name="machine" placeholder="장비명" value="{{ request.args.get('machine', '') }}">
+    <input type="text" name="client" placeholder="거래처" value="{{ request.args.get('client', '') }}">
+    <input type="date" name="date" value="{{ request.args.get('date', '') }}">
+    <button type="submit">검색</button>
+    <a href="{{ url_for('jobs') }}">초기화</a>
+  </form>
 
-<h2>작업 목록</h2>
-<form method="GET" action="{{ url_for('jobs') }}" style="margin-bottom:20px; text-align:center;">
-    <input type="text" name="worker" placeholder="기사명" value="{{ request.args.get('worker', '') }}" />
-    <input type="text" name="machine" placeholder="장비명" value="{{ request.args.get('machine', '') }}" />
-    <input type="text" name="client" placeholder="거래처" value="{{ request.args.get('client', '') }}" />
-    <input type="date" name="date" value="{{ request.args.get('date', '') }}" />
-    <button type="submit" style="padding:6px 12px; cursor:pointer;">검색</button>
-    <a href="{{ url_for('jobs') }}" style="margin-left:10px; color:#2196F3; cursor:pointer;">초기화</a>
-</form>
-
-{% if jobs %}
-<table>
-    <thead>
-    <tr>
-        <th>날짜</th>
-        <th>시간</th>
-        <th>기사</th>
-        <th>장비</th>
-        <th>거래처</th>
-        <th>위치</th>
-        <th>요청사항</th>
-        <th>관리</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for job in jobs %}
-    <tr>
-        <td>{{ job.date }}</td>
-        <td>{{ job.time }}</td>
-        <td>{{ job.worker }}</td>
-        <td>{{ job.machine }}</td>
-        <td>{{ job.client }}</td>
-        <td>{{ job.location }}</td>
-        <td>
-            {{ job.note | e }}
-            {% if job.history %}
-            <button class="history-toggle-btn" onclick="toggleHistory({{ loop.index0 }})">수정 내역 보기</button>
-            <div id="history-{{ loop.index0 }}" class="history-container">
-                {% for h in job.history %}
-                    <div>
-                        <strong>{{ h.timestamp }}</strong> - {{ h.editor }}: {{ h.changes }}
-                    </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </td>
-        <td class="actions">
-            {% if job.status == '완료' %}
-                <a href="{{ url_for('toggle_complete', job_index=loop.index0, **request.args) }}"
-                class="btn delete-btn"
-                onclick="return confirm('완료 상태를 취소하시겠습니까?');">완료 취소</a>
+  <form method="POST" action="{{ url_for('batch_action_jobs') }}">
+    {% if jobs %}
+    <table>
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="select_all" onclick="toggleAll(this)"></th>
+          <th>날짜</th><th>시간</th><th>기사</th><th>장비</th><th>거래처</th>
+          <th>위치</th><th>요청사항</th><th>상태</th><th>관리</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for job in jobs %}
+        <tr>
+          <td><input type="checkbox" name="selected_jobs" value="{{ loop.index0 }}"></td>
+          <td>{{ job.date }}</td>
+          <td>{{ job.time }}</td>
+          <!-- 기사 -->
+          <td>
+            {% set val = job.worker %}
+            {% if val and val|length > 7 %}
+              {{ val[:7] }}...
+              <span class="more-link" onclick="showMore('{{ val|replace("'", "\\'")|replace('\n','<br>') }}','기사')">더보기</span>
             {% else %}
-                <a href="{{ url_for('toggle_complete', job_index=loop.index0, **request.args) }}"
-                class="btn edit-btn"
-                onclick="return confirm('작업을 완료 처리하시겠습니까?');">완료</a>
+              {{ val }}
             {% endif %}
-            <a href="{{ url_for('edit_job', job_index=loop.index0, **request.args) }}"
-            class="btn edit-btn">수정</a>
-            <a href="#" class="btn delete-btn" onclick="openDeleteModal({{ loop.index0 }}); return false;">삭제</a>
-        </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<p style="text-align:center;">등록된 작업이 없습니다.</p>
-{% endif %}
+          </td>
+          <!-- 장비 -->
+          <td>
+            {% set val = job.machine_name or job.machine %}
+            {% if val and val|length > 7 %}
+              {{ val[:7] }}...
+              <span class="more-link" onclick="showMore('{{ val|replace("'", "\\'")|replace('\n','<br>') }}','장비')">더보기</span>
+            {% else %}
+              {{ val }}
+            {% endif %}
+          </td>
+          <!-- 거래처 -->
+          <td>
+            {% set val = job.client %}
+            {% if val and val|length > 7 %}
+              {{ val[:7] }}...
+              <span class="more-link" onclick="showMore('{{ val|replace("'", "\\'")|replace('\n','<br>') }}','거래처')">더보기</span>
+            {% else %}
+              {{ val }}
+            {% endif %}
+          </td>
+          <!-- 위치 -->
+          <td>
+            {% set val = job.location %}
+            {% if val and val|length > 7 %}
+              {{ val[:7] }}...
+              <span class="more-link" onclick="showMore('{{ val|replace("'", "\\'")|replace('\n','<br>') }}','위치')">더보기</span>
+            {% else %}
+              {{ val }}
+            {% endif %}
+            {% if val %}
+              <span class="copy-btn" onclick="copyToClipboard('{{ val|replace("'", "\\'") }}')">복사</span>
+            {% endif %}
+          </td>
+          <!-- 요청사항 -->
+          <td>
+            {% set val = job.note %}
+            {% if val and val|length > 7 %}
+              {{ val[:7] }}...
+              <span class="more-link" onclick="showMore('{{ val|replace("'", "\\'")|replace('\n','<br>') }}','요청사항')">더보기</span>
+            {% else %}
+              {{ val }}
+            {% endif %}
+          </td>
+          <td>{{ job.status if job.status else '진행중' }}</td>
+          <td>
+            {% if job.status == '완료' %}
+              <a href="{{ url_for('toggle_complete', job_index=loop.index0, **request.args) }}" class="btn undo-btn"
+                 onclick="return confirm('완료 상태를 취소하시겠습니까?');">완료취소</a>
+            {% else %}
+              <a href="{{ url_for('toggle_complete', job_index=loop.index0, **request.args) }}" class="btn complete-btn"
+                 onclick="return confirm('작업을 완료 처리하시겠습니까?');">완료</a>
+            {% endif %}
+            <a href="{{ url_for('edit_job', job_index=loop.index0, **request.args) }}" class="btn edit-btn">수정</a>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
 
-<a href="/dashboard" class="back-link">← 대시보드로 돌아가기</a>
-
-<!-- 삭제 확인 모달 -->
-<div id="deleteModal">
-    <div class="modal-content">
-        <p>정말 삭제하시겠습니까?</p>
-        <div class="modal-buttons">
-            <button class="btn-delete-confirm" onclick="confirmDelete()">삭제</button>
-            <button class="btn-cancel" onclick="closeDeleteModal()">취소</button>
-        </div>
+    <div class="action-buttons">
+      <button type="submit" name="action" value="delete_selected" class="delete-selected-btn" onclick="return confirm('선택한 작업을 삭제하시겠습니까?');">선택 삭제</button>
+      <button type="submit" name="action" value="complete_all" class="complete-all-btn" onclick="return confirm('모든 작업을 완료 처리하시겠습니까?');">모두 완료 처리</button>
     </div>
-</div>
+    {% else %}
+      <p style="text-align:center;">등록된 작업이 없습니다.</p>
+    {% endif %}
+  </form>
 
-<script>
-    function toggleHistory(index) {
-        const el = document.getElementById('history-' + index);
-        if (el.style.display === 'none' || el.style.display === '') {
-            el.style.display = 'block';
-        } else {
-            el.style.display = 'none';
-        }
+  <a href="/dashboard" class="back-link">← 대시보드로 돌아가기</a>
+
+  <!-- 더보기 모달 -->
+  <div id="modalBg" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.25); justify-content:center; align-items:center; z-index:1000;">
+    <div id="modalContent" style="background:white; padding:36px 32px; border-radius:12px; min-width:260px; max-width:90vw; box-shadow:0 2px 16px rgba(0,0,0,0.18); text-align:center;">
+      <h3 id="modalTitle" style="margin-bottom:18px;">상세 내용</h3>
+      <div id="modalText"></div>
+      <button class="close-btn" onclick="closeModal()" style="margin-top:24px; background:#2196F3; color:white; font-size:15px; border:none; padding:10px 32px; border-radius:7px; cursor:pointer;">닫기</button>
+    </div>
+  </div>
+
+  <script>
+    function showMore(val, title){
+      document.getElementById('modalBg').style.display='flex';
+      document.getElementById('modalText').innerHTML = val.replace(/\\n/g, '<br>');
+      document.getElementById('modalTitle').innerText = title + ' 전체 내용';
     }
-
-    let deleteIndex = null;
-
-    function openDeleteModal(index) {
-        deleteIndex = index;
-        document.getElementById('deleteModal').style.display = 'flex';
+    function closeModal(){
+      document.getElementById('modalBg').style.display='none';
     }
-
-    function closeDeleteModal() {
-        deleteIndex = null;
-        document.getElementById('deleteModal').style.display = 'none';
-    }
-
-    function confirmDelete() {
-        if (deleteIndex !== null) {
-            const currentUrl = new URL(window.location.href);
-            const queryParams = currentUrl.search;
-            window.location.href = `/delete_job/${deleteIndex}${queryParams}`;
-        }
-    }
-
     window.onclick = function(event) {
-        const modal = document.getElementById('deleteModal');
-        if (event.target === modal) {
-            closeDeleteModal();
-        }
-    };
-</script>
+      var modal = document.getElementById('modalBg');
+      if(event.target === modal) closeModal();
+    }
 
+    function toggleAll(source) {
+      const checkboxes = document.getElementsByName('selected_jobs');
+      for(let i=0; i<checkboxes.length; i++){
+        checkboxes[i].checked = source.checked;
+      }
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('복사되었습니다: ' + text);
+      }).catch(err => {
+        alert('복사 실패: ' + err);
+      });
+    }
+  </script>
 </body>
 </html>

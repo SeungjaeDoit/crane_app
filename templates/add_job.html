@@ -129,7 +129,7 @@
     <select id="worker_select" onchange="document.getElementById('worker_input').value = this.value;">
         <option value="">선택 안함</option>
         {% for worker in workers %}
-            <option value="{{ worker['name'] }}">{{ worker['name'] }}</option>
+            <option value="{{ worker['name'] }}">{{ worker['name'] }}({{ worker['username'][:worker['username']|length - worker['name']|length] }})</option>
         {% endfor %}
     </select>
     <input type="text" id="worker_input" name="worker" placeholder="직접입력 또는 드롭다운 선택">

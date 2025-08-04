@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>기사 관리</title>
+    <style>
+        body { font-family: '맑은 고딕', sans-serif; background:#f8f9fa; margin:0; padding:20px;}
+        table { width:100%; background:white; border-radius:8px; box-shadow:0 0 8px rgba(0,0,0,0.08); border-collapse:collapse;}
+        th, td { padding:12px 10px; text-align:center; border-bottom:1px solid #eee; }
+        th { background:#f2f2f2; }
+        tr:last-child td { border-bottom:none; }
+        .btn { padding:7px 15px; border-radius:6px; border:none; cursor:pointer; font-size:14px;}
+        .btn-approve { background:#2196F3; color:white;}
+        .btn-delete { background:#e53935; color:white;}
+        .btn-update { background:#757575; color:white;}
+        .btn-manager { background:#34a853; color:white;}
+        .btn-revoke { background:#bdbdbd; color:#222;}
+        .status-pending { color:#f39c12; font-weight:600;}
+        .status-active { color:#4CAF50; font-weight:600;}
+        .status-manager { color:#1565c0; font-weight:600;}
+        .back-button {
+            margin-top: 20px;
+            padding: 12px 0;
+            width: 100%;
+            background-color: #28a745;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .back-button:hover {
+            background-color: #1e7e34;
+        }
+    </style>
+</head>
+<body>
+    <h2>기사 관리</h2>
+    <table>
+        <tr>
+            <th>이름</th>
+            <th>전화번호</th>
+            <th>상태</th>
+            <th>권한</th>
+            <th>관리</th>
+        </tr>
+        {% for w in workers %}
+        <tr>
+            <td>{{ w.name }}</td>
+            <td>{{ w.phone }}</td>
+            <td>
+                {% if w.status == 'pending' %}
+                    <span class="status-pending">가입대기</span>
+                {% elif w.status == 'active' %}
+                    <span class="status-active">정상</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if w.get('role') == 'manager' or w.get('role') == 'boss' %}
+                    <span class="status-manager">관리자</span>
+                {% else %}
+                    기사
+                {% endif %}
+            </td>
+            <td>
+                {% if w.status == 'pending' %}
+                    <form action="/approve_worker/{{ w.username }}" method="post" style="display:inline;">
+                        <button class="btn btn-approve" type="submit">승인</button>
+                    </form>
+                    <form action="/delete_worker/{{ w.username }}" method="post" style="display:inline;">
+                        <button class="btn btn-delete" type="submit" onclick="return confirm('삭제하시겠습니까?');">거절</button>
+                    </form>
+                {% else %}
+                    <form action="/update_worker/{{ w.username }}" method="get" style="display:inline;">
+                        <button class="btn btn-update" type="submit">수정</button>
+                    </form>
+                    <form action="/delete_worker/{{ w.username }}" method="post" style="display:inline;">
+                        <button class="btn btn-delete" type="submit" onclick="return confirm('정말 삭제하시겠습니까?');">삭제</button>
+                    </form>
+                    {% if w.get('role') == 'manager' or w.get('role') == 'boss' %}
+                        <form action="/revoke_manager/{{ w.username }}" method="post" style="display:inline;">
+                            <button class="btn btn-revoke" type="submit">관리자해제</button>
+                        </form>
+                    {% else %}
+                        <form action="/grant_manager/{{ w.username }}" method="post" style="display:inline;">
+                            <button class="btn btn-manager" type="submit"
+                            onclick="return confirm('해당 직원을 관리자로 설정하시겠습니까? 관리자로 설정하실 경우 사장님이 하시는 모든 권한이 동일하게 주어집니다. 직계가족, 회사 사무직원이 아닌 경우 관리자 권한을 주지 마십시오.')"
+                            >관리자권한</button>
+                        </form>
+                    {% endif %}
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5" style="color:#aaa;">등록된 기사가 없습니다.</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <a href="{{ url_for('dashboard') }}" class="back-button">🏠 메인화면으로 돌아가기</a>
+</body>
+</html>

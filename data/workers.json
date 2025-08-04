@@ -1,7 +1,18 @@
 {
   "홍예크레인": [
     {
-      "name": "이윤재"
+      "username": "홍예크레인이윤재",
+      "name": "이윤재",
+      "phone": "01072337245",
+      "role": "worker",
+      "status": "active"
+    },
+    {
+      "username": "홍예크레인이영재",
+      "name": "이영재",
+      "phone": "01030447135",
+      "role": "worker",
+      "status": "active"
     }
   ]
 }

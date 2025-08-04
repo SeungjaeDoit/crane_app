@@ -132,7 +132,7 @@
     <div class="error">{{ error }}</div>
     {% endif %}
 
-    <form method="POST">
+    <form method="POST" action="{{ url_for('register_worker') }}">
 
         <label for="password">비밀번호</label>
         <input type="password" id="password" name="password" required>

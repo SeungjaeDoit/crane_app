@@ -2,129 +2,200 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8" />
-    <title>기사 대시보드 - 업무 확인</title>
+    <title>작업 목록</title>
     <style>
-        body {
-            font-family: '맑은 고딕', Malgun Gothic, 돋움, Dotum, sans-serif;
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
+        body { font-family: '맑은 고딕', Malgun Gothic, 돋움, Dotum, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; background: #f8f9fa; border-radius: 10px; }
+        h2 { text-align: center; margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
+        th, td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #ddd; word-break: break-all; white-space: normal; position: relative; }
+        th { background-color: #eeeeee; }
+        tr:hover { background-color: #f1f1f1; }
+        .btn { padding: 7px 13px; border-radius: 6px; color: white; font-size: 14px; border: none; cursor: pointer; margin: 2px 0; min-width: 64px; white-space: nowrap; display: block; }
+        .edit-btn { background-color: #007bff; }
+        .edit-btn:hover { background-color: #0056b3; }
+        .complete-btn { background-color: #28a745; }
+        .complete-btn:hover { background-color: #218838; }
+        .undo-btn { background-color: #ff9800; }
+        .undo-btn:hover { background-color: #e65100; }
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: center;
+            justify-content: center;
+            min-width: 72px;
+            /* 두 줄 버튼 스타일 */
         }
-        h2 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        th, td {
-            padding: 12px 10px;
-            text-align: center;
-            border-bottom: 1px solid #ddd;
-            word-break: break-word;
-            vertical-align: top;
-        }
-        th {
-            background-color: #eeeeee;
-        }
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-        .btn {
-            padding: 6px 12px;
-            border-radius: 5px;
-            text-decoration: none;
-            color: white;
+        .more-link {
+            color: #2196F3;
             cursor: pointer;
-            user-select: none;
-            font-size: 14px;
-            border: none;
+            font-size: 13px;
+            text-decoration: underline;
+            margin-left: 3px;
         }
-        .complete-btn {
-            background-color: #28a745;
+        /* 모달 스타일 */
+        #modalBg {
+            display: none;
+            position: fixed;
+            left: 0; top: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.25);
+            justify-content: center; align-items: center;
+            z-index: 1000;
         }
-        .complete-btn:hover {
-            background-color: #218838;
-        }
-        a.logout-link {
-            display: block;
-            margin-top: 20px;
+        #modalContent {
+            background: white;
+            padding: 36px 32px;
+            border-radius: 12px;
+            min-width: 260px;
+            max-width: 90vw;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.18);
             text-align: center;
-            color: #555;
-            text-decoration: none;
         }
-        a.logout-link:hover {
+        #modalContent h3 {
+            margin-bottom: 18px;
+        }
+        #modalContent .close-btn {
+            margin-top: 24px;
+            background: #2196F3;
+            color: white;
+            font-size: 15px;
+            border: none;
+            padding: 10px 32px;
+            border-radius: 7px;
+            cursor: pointer;
+        }
+        #modalContent .close-btn:hover {
+            background: #1976D2;
+        }
+        /* 복사 버튼 스타일 */
+        .copy-btn {
+            font-size: 12px;
+            color: #4caf50;
+            cursor: pointer;
+            margin-left: 5px;
             text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <h2>{{ username }}님, 업무 확인</h2>
-
-    {% if jobs %}
+    <h2>전체 작업 관리</h2>
+    <!-- 검색 폼 등 생략 -->
     <table>
         <thead>
             <tr>
                 <th>날짜</th>
                 <th>시간</th>
+                <th>기사</th>
                 <th>장비</th>
                 <th>거래처</th>
                 <th>위치</th>
                 <th>요청사항</th>
                 <th>상태</th>
-                <th>작업 완료</th>
+                <th>관리</th>
             </tr>
         </thead>
         <tbody>
-            {% for job in jobs %}
+        {% for job in jobs %}
             <tr>
                 <td>{{ job.date }}</td>
                 <td>{{ job.time }}</td>
-                <td>{{ job.machine }}</td>
-                <td>{{ job.client }}</td>
-                <td>{{ job.location }}</td>
-                <td>{{ job.note }}</td>
-                <td>{{ job.status if job.status else '진행중' }}</td>
+                <!-- 기사 -->
                 <td>
-                    {% if job.status != '완료' %}
-                    <a href="{{ url_for('toggle_complete', job_index=loop.index0) }}" class="btn complete-btn"
-                       onclick="return confirm('작업을 완료 처리하시겠습니까?');">완료</a>
+                  {% set val = job.worker or job.username %}
+                  {% if val and val|length > 7 %}
+                    {{ val[:7] ~ '...' }}
+                    <span class="more-link" onclick="showMore('{{ val|replace("'", "\\'")|replace('\n','<br>') }}','기사')">더보기</span>
+                  {% else %}
+                    {{ val }}
+                  {% endif %}
+                </td>
+                <!-- 장비 -->
+                <td>
+                  {% set val = job.machine_name or job.machine %}
+                  {% if val and val|length > 7 %}
+                    {{ val[:7] ~ '...' }}
+                    <span class="more-link" onclick="showMore('{{ val|replace("'", "\\'")|replace('\n','<br>') }}','장비')">더보기</span>
+                  {% else %}
+                    {{ val }}
+                  {% endif %}
+                </td>
+                <!-- 거래처 -->
+                <td>
+                  {% set val = job.client %}
+                  {% if val and val|length > 7 %}
+                    {{ val[:7] ~ '...' }}
+                    <span class="more-link" onclick="showMore('{{ val|replace("'", "\\'")|replace('\n','<br>') }}','거래처')">더보기</span>
+                  {% else %}
+                    {{ val }}
+                  {% endif %}
+                </td>
+                <!-- 위치 -->
+                <td>
+                  {% set val = job.location %}
+                  {% if val and val|length > 7 %}
+                    {{ val[:7] ~ '...' }}
+                    <span class="more-link" onclick="showMore('{{ val|replace("'", "\\'")|replace('\n','<br>') }}','위치')">더보기</span>
+                    <span class="copy-btn" onclick="copyToClipboard('{{ val|replace("'", "\\'") }}')">복사</span>
+                  {% else %}
+                    {{ val }}
+                    <span class="copy-btn" onclick="copyToClipboard('{{ val|replace("'", "\\'") }}')">복사</span>
+                  {% endif %}
+                </td>
+                <!-- 요청사항 -->
+                <td>
+                  {% set val = job.note %}
+                  {% if val and val|length > 7 %}
+                    {{ val[:7] ~ '...' }}
+                    <span class="more-link" onclick="showMore('{{ val|replace("'", "\\'")|replace('\n','<br>') }}','요청사항')">더보기</span>
+                  {% else %}
+                    {{ val }}
+                  {% endif %}
+                </td>
+                <td>{{ job.status if job.status else '진행중' }}</td>
+                <td class="actions">
+                    {% if job.status == '완료' %}
+                        <a href="{{ url_for('toggle_complete', job_index=loop.index0) }}" class="btn undo-btn"
+                           onclick="return confirm('완료 상태를 취소하시겠습니까?');">완료취소</a>
                     {% else %}
-                    완료됨
+                        <a href="{{ url_for('toggle_complete', job_index=loop.index0) }}" class="btn complete-btn"
+                           onclick="return confirm('작업을 완료 처리하시겠습니까?');">완료</a>
                     {% endif %}
+                    <a href="{{ url_for('edit_job', job_index=loop.index0) }}" class="btn edit-btn">수정</a>
                 </td>
             </tr>
-            {% endfor %}
+        {% endfor %}
         </tbody>
     </table>
-    {% else %}
-    <p style="text-align:center;">할당된 작업이 없습니다.</p>
-    {% endif %}
-<body>
-  <h2>{{ username }}님, 업무 확인</h2>
 
-  <!-- 작업 목록 테이블 ... 기존 코드 -->
-
-  <!-- 메뉴 네비게이션 -->
-  <nav style="margin-top: 30px; display: flex; justify-content: center; gap: 20px;">
-    <a href="{{ url_for('profile') }}" 
-       style="background-color: #007bff; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
-      내 정보 조회 및 수정
-    </a>
-    <a href="{{ url_for('calendar_view') }}" 
-       style="background-color: #17a2b8; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
-      작업 상세 보기 및 수정 (캘린더형)
-    </a>
-    <a href="{{ url_for('logout') }}" 
-       style="background-color: #6c757d; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
-      로그아웃
-    </a>
-  </nav>
+    <!-- 더보기 모달 -->
+    <div id="modalBg">
+        <div id="modalContent">
+            <h3 id="modalTitle">상세 내용</h3>
+            <div id="modalText"></div>
+            <button class="close-btn" onclick="closeModal()">닫기</button>
+        </div>
+    </div>
+    <script>
+      function showMore(val, title){
+        document.getElementById('modalBg').style.display='flex';
+        document.getElementById('modalText').innerHTML = val.replace(/\\n/g, '<br>');
+        document.getElementById('modalTitle').innerText = title + ' 전체 내용';
+      }
+      function closeModal(){
+        document.getElementById('modalBg').style.display='none';
+      }
+      window.onclick = function(event) {
+        var modal = document.getElementById('modalBg');
+        if (event.target === modal) closeModal();
+      }
+      function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+          alert('복사되었습니다: ' + text);
+        }, () => {
+          alert('복사에 실패했습니다.');
+        });
+      }
+    </script>
 </body>
 </html>

@@ -5,5 +5,21 @@
     "company": "홍예크레인",
     "phone": "01028097135",
     "company_code": "123456"
+  },
+  "홍예크레인이윤재": {
+    "password": "cc0303",
+    "role": "worker",
+    "company": "홍예크레인",
+    "name": "이윤재",
+    "phone": "01072337245",
+    "status": "active"
+  },
+  "홍예크레인이영재": {
+    "password": "cc0303",
+    "role": "worker",
+    "company": "홍예크레인",
+    "name": "이영재",
+    "phone": "01030447135",
+    "status": "active"
   }
 }

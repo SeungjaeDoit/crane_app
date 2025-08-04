@@ -1,15 +1,27 @@
 {
   "홍예크레인": [
     {
-      "date": "2025-08-06",
-      "time": "08:20",
+      "date": "2025-08-07",
+      "time": "05:00",
       "worker": "이윤재",
       "machine_name": "mk80",
       "machine_number": "007가6743",
       "machine_alias": "21년식",
-      "client": "DL",
-      "location": "충의로190-1",
-      "note": "120하루"
+      "client": "테스트3테",
+      "location": "테스트4테",
+      "note": "테스트"
+    },
+    {
+      "date": "2025-08-22",
+      "time": "07:00",
+      "worker": "이영재",
+      "machine_name": "mK50",
+      "machine_number": "001가4422",
+      "machine_alias": "굳보이",
+      "client": "테스트4",
+      "location": "테스트5",
+      "note": "테스트6",
+      "status": "완료"
     }
   ]
 }

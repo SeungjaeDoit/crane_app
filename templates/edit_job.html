@@ -106,13 +106,27 @@
     <input type="text" id="worker_input" name="worker" value="{{ job.worker }}" required>
 
     <label>장비 선택 또는 직접입력</label>
-    <select onchange="document.getElementById('machine_input').value = this.value;">
-        <option value="">선택 안함</option>
-        {% for machine in machines %}
-            <option value="{{ machine.model }}" {% if machine.model == job.machine %}selected{% endif %}>{{ machine.type }} ({{ machine.model }})</option>
-        {% endfor %}
+    <select 
+    onchange="
+        var opt = this.options[this.selectedIndex];
+        document.getElementById('machine_name').value = opt.dataset.name || '';
+        document.getElementById('machine_number').value = opt.dataset.number || '';
+        document.getElementById('machine_alias').value = opt.dataset.alias || '';
+    ">
+    <option value="">선택 안함</option>
+    {% for m in machines %}
+        <option 
+        data-name="{{ m.name }}" 
+        data-number="{{ m.number }}" 
+        data-alias="{{ m.alias }}">
+        {{ m.name }} / {{ m.number }}{% if m.alias %} / {{ m.alias }}{% endif %}
+        </option>
+    {% endfor %}
     </select>
-    <input type="text" id="machine_input" name="machine" value="{{ job.machine }}" required>
+    <input type="text" id="machine_name" name="machine_name" value="{{ job.machine_name or '' }}" placeholder="장비명" required>
+    <input type="text" id="machine_number" name="machine_number" value="{{ job.machine_number or '' }}" placeholder="차량번호" required>
+    <input type="text" id="machine_alias" name="machine_alias" value="{{ job.machine_alias or '' }}" placeholder="별칭/연식(선택)">
+
 
     <label>거래처 선택 또는 직접입력</label>
     <select onchange="document.getElementById('client_input').value = this.value;">

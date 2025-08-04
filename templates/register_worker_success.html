@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>기사 회원가입 완료</title>
+    <style>
+        body {
+            font-family: '맑은 고딕', Malgun Gothic, 돋움, Dotum, sans-serif;
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 30px 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            box-shadow: 0 0 18px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        h2 {
+            margin-bottom: 18px;
+        }
+        .success-msg {
+            margin-bottom: 28px;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        button {
+            margin-top: 20px;
+            width: 90%;
+            padding: 14px 0;
+            background-color: #2196F3;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #1976d2;
+        }
+        .auto-move-msg {
+            margin-top: 16px;
+            font-size: 14px;
+            color: #888;
+        }
+    </style>
+    <script>
+        // 3초 뒤 자동 이동
+        setTimeout(function() {
+            window.location.href = "/login";
+        }, 10000);
+    </script>
+</head>
+<body>
+    <h2>회원가입 완료!</h2>
+    <div class="success-msg">
+        <b>{{ name }}</b> 기사님<br>
+        <b>{{ company }}</b> 회사로 회원가입되었습니다!
+    </div>
+    <form action="/login">
+        <button type="submit">로그인하러 가기</button>
+    </form>
+    <div class="auto-move-msg">
+        10초 후 로그인 페이지로 자동 이동합니다.
+    </div>
+</body>
+</html>
