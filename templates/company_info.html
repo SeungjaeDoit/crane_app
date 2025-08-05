@@ -96,6 +96,8 @@
         <button type="submit">정보 수정하기</button>
     </form>
 
-    <a href="{{ url_for('dashboard') }}" class="back-link">← 대시보드로 돌아가기</a>
+    <form action="{{ url_for('dashboard') }}" method="get" style="margin-top:20px;">
+  <button type="submit" style="font-size: 16px; cursor:pointer;">🏠 메인화면으로 돌아가기</button>
+</form>
 </body>
 </html>

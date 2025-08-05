@@ -9,7 +9,8 @@
       "machine_alias": "21년식",
       "client": "테스트3테",
       "location": "테스트4테",
-      "note": "테스트"
+      "note": "테스트",
+      "status": "진행중"
     },
     {
       "date": "2025-08-22",
@@ -21,7 +22,7 @@
       "client": "테스트4",
       "location": "테스트5",
       "note": "테스트6",
-      "status": "완료"
+      "status": "진행중"
     }
   ]
 }

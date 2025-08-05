@@ -66,7 +66,7 @@ def login():
 
     return render_template('login.html', error=error)
 
-@app.route('/logout')
+@app.route('/logout', methods=['POST'])
 def logout():
     session.clear()
     return redirect(url_for('login'))
@@ -91,7 +91,14 @@ def dashboard():
 @app.route('/batch_action_jobs', methods=['POST'])
 def batch_action_jobs():
     if 'username' not in session:
-        return redirect(url_for('login'))
+        return redirect('/login')
+
+    action = request.form.get('action')
+    selected_indices = request.form.getlist('selected_jobs')
+
+    if not selected_indices and action in ['delete_selected', 'complete_selected']:
+        # 선택된 작업이 없으면 목록 페이지로 그냥 이동
+        return redirect(url_for('jobs'))
 
     username = session['username']
     users_db = load_json('users.json', {})
@@ -100,24 +107,22 @@ def batch_action_jobs():
     jobs_db = load_json('jobs.json', {})
     job_list = jobs_db.get(company, [])
 
-    selected_indices = request.form.getlist('selected_jobs')  # checkbox name이 selected_jobs여야 함
+    selected_indices = sorted([int(i) for i in selected_indices], reverse=True)
 
-    action = request.form.get('action')  # 예: 'delete' 또는 'complete'
+    if action == 'delete_selected':
+        for idx in selected_indices:
+            if 0 <= idx < len(job_list):
+                del job_list[idx]
+        save_json('jobs.json', jobs_db)
 
-    if action == 'delete':
-        # 인덱스 역순으로 삭제 (인덱스 밀림 방지)
-        for index_str in sorted(selected_indices, reverse=True):
-            index = int(index_str)
-            if 0 <= index < len(job_list):
-                del job_list[index]
-    elif action == 'complete':
-        for index_str in selected_indices:
-            index = int(index_str)
-            if 0 <= index < len(job_list):
-                job_list[index]['status'] = '완료'
+    elif action == 'complete_selected':
+        for idx in selected_indices:
+            if 0 <= idx < len(job_list):
+                job_list[idx]['status'] = '완료'
+        save_json('jobs.json', jobs_db)
 
-    save_json('jobs.json', jobs_db)
     return redirect(url_for('jobs'))
+
 
 @app.route('/dashboard_worker')
 def dashboard_worker():
@@ -686,6 +691,52 @@ def edit_job(job_index):
         clients=clients,
         locations=locations
     )
+
+@app.route('/edit_worker', methods=['GET', 'POST'])
+def edit_worker():
+    if 'username' not in session:
+        return redirect('/login')
+
+    # 사장용: worker_username 쿼리 파라미터로 다른 기사 정보 수정 가능
+    worker_username = request.args.get('worker_username', None)
+    if worker_username:
+        # 사장이라면 가능, 아니면 제한 필요
+        # 예: 사장 여부 체크 (users_db[session['username']]['role'] == 'boss' 등)
+        users_db = load_json('users.json', {})
+        current_user = users_db.get(session['username'])
+        if not current_user or current_user.get('role') != 'boss':
+            return "권한이 없습니다.", 403
+        username_to_edit = worker_username
+    else:
+        username_to_edit = session['username']
+
+    users_db = load_json('users.json', {})
+    user_info = users_db.get(username_to_edit)
+    if not user_info:
+        return "사용자 정보를 찾을 수 없습니다.", 404
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        phone = request.form.get('phone', '').strip()
+        password = request.form.get('password', '').strip()
+
+        if name:
+            user_info['name'] = name
+        if phone:
+            user_info['phone'] = phone
+        if password:
+            user_info['password'] = password
+
+        users_db[username_to_edit] = user_info
+        save_json('users.json', users_db)
+
+        # 수정 후 사장은 관리페이지, 기사는 대시보드로 리다이렉트
+        if username_to_edit != session['username']:
+            return redirect(url_for('manage_workers'))
+        else:
+            return redirect(url_for('dashboard_worker'))
+
+    return render_template('edit_worker.html', user=user_info)
 
 @app.route('/delete_job/<int:job_index>')
 def delete_job(job_index):

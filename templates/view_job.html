@@ -161,14 +161,16 @@
 
     <div class="action-buttons">
       <button type="submit" name="action" value="delete_selected" class="delete-selected-btn" onclick="return confirm('선택한 작업을 삭제하시겠습니까?');">선택 삭제</button>
-      <button type="submit" name="action" value="complete_all" class="complete-all-btn" onclick="return confirm('모든 작업을 완료 처리하시겠습니까?');">모두 완료 처리</button>
+      <button type="submit" name="action" value="complete_selected" class="complete-all-btn" onclick="return confirm('선택한 작업을 완료 처리하시겠습니까?');">선택 작업 완료</button>
     </div>
     {% else %}
       <p style="text-align:center;">등록된 작업이 없습니다.</p>
     {% endif %}
   </form>
 
-  <a href="/dashboard" class="back-link">← 대시보드로 돌아가기</a>
+  <form action="{{ url_for('dashboard') }}" method="get" style="margin-top:20px;">
+  <button type="submit" style="font-size: 16px; cursor:pointer;">🏠 메인화면으로 돌아가기</button>
+</form>
 
   <!-- 더보기 모달 -->
   <div id="modalBg" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.25); justify-content:center; align-items:center; z-index:1000;">

@@ -179,9 +179,9 @@
 
     <button type="submit">작업 등록</button>
 </form>
-
-<a href="/dashboard">← 대시보드로 돌아가기</a>
-
+<form action="{{ url_for('dashboard') }}" method="get" style="margin-top:20px;">
+  <button type="submit" style="font-size: 16px; cursor:pointer;">🏠 메인화면으로 돌아가기</button>
+</form>
 <!-- 작업 등록 성공 모달 -->
 <div id="successModal">
   <div class="modal-content">

@@ -168,6 +168,11 @@
         </tbody>
     </table>
 
+<a href="{{ url_for('edit_worker') }}" class="btn edit-btn">내 정보 수정</a>
+<form action="{{ url_for('logout') }}" method="post" style="display:inline;">
+  <button type="submit" style="font-size: 16px; padding: 6px 14px; cursor: pointer;">🚪 로그아웃</button>
+</form>
+
     <!-- 더보기 모달 -->
     <div id="modalBg">
         <div id="modalContent">

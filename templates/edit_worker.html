@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>기사 정보 수정</title>
+  <style>
+    body { font-family: '맑은 고딕', Malgun Gothic, 돋움, Dotum, sans-serif; max-width: 600px; margin: 50px auto; background: #f8f9fa; border-radius: 12px; padding: 20px; }
+    label { font-weight: bold; margin-top: 12px; display: block; }
+    input { width: 100%; padding: 8px; margin-top: 4px; border-radius: 6px; border: 1px solid #ccc; }
+    button { margin-top: 24px; width: 100%; background-color: #007bff; color: white; padding: 12px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+    button:hover { background-color: #0056b3; }
+    .back-btn { margin-top: 12px; text-align: center; }
+    .back-btn a { color: #007bff; text-decoration: none; font-weight: bold; }
+    .back-btn a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h2>기사 정보 수정</h2>
+  <form method="post">
+    <label for="name">이름</label>
+    <input type="text" id="name" name="name" value="{{ user.name }}" required />
+
+    <label for="phone">전화번호</label>
+    <input type="text" id="phone" name="phone" value="{{ user.phone }}" required />
+
+    <label for="password">비밀번호 (변경 원할 때만 입력)</label>
+    <input type="password" id="password" name="password" placeholder="새 비밀번호 입력" />
+
+    <button type="submit">정보 수정하기</button>
+  </form>
+  <div class="back-btn">
+  <a href="{{ url_for('dashboard_worker') }}">🏠 메인화면으로 돌아가기</a>
+</div>
+</body>
+</html>
