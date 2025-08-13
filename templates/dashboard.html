@@ -24,7 +24,7 @@
             margin: 0;
             display: flex;
             flex-direction: column;
-            gap: 12px; /* 버튼 간 간격 */
+            gap: 12px;
         }
         ul li {
             margin: 0;
@@ -58,14 +58,15 @@
         <ul>
             <li><a href="{{ url_for('add_worker') }}">➕ 기사 등록</a></li>
             <li><a href="{{ url_for('manage_workers') }}">👷‍♂️ 기사 관리</a></li>
-            <li><a href="{{ url_for('add_machine') }}">➕ 장비 등록</a></li>
+            <li><a href="{{ url_for('add_machine') }}">➕ 장비 등록/관리</a></li>
             <li><a href="{{ url_for('add_job') }}">📝 작업지시 등록</a></li>
-            <li><a href="{{ url_for('jobs') }}">📋 작업 목록 보기</a></li>
+             <li><a href="{{ url_for('view_jobs') }}">📋 작업 목록 보기</a></li>
             <li><a href="{{ url_for('company_info') }}">🏢 회사정보 보기/수정</a></li>
         </ul>
     {% endif %}
 
     <hr>
+    <!-- 로그아웃 링크를 하드코딩이 아닌 url_for 로 변경했습니다 -->
     <a href="{{ url_for('logout') }}">🚪 로그아웃</a>
 </body>
 </html>

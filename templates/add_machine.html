@@ -2,119 +2,87 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>장비 등록</title>
+    <title>장비 관리</title>
     <style>
-    body {
-        font-family: '맑은 고딕', Malgun Gothic, 돋움, Dotum, sans-serif;
-        max-width: 600px;
-        margin: 50px auto;
-        padding: 20px 30px;
-        background-color: #f8f9fa;
-        border-radius: 12px;
-        box-shadow: 0 0 15px rgba(0,0,0,0.1);
-    }
-    h2 {
-        text-align: center;
-        color: #333;
-        margin-bottom: 30px;
-    }
-    ul {
-        list-style: none;
-        padding: 0;
-    }
-    ul li {
-        margin: 12px 0;
-    }
-    a {
-        text-decoration: none;
-        color: #fff;
-        background-color: #007bff;
-        display: block;
-        padding: 12px;
-        border-radius: 6px;
-        font-weight: 600;
-        text-align: center;
-        transition: background-color 0.3s ease;
-    }
-    a:hover {
-        background-color: #0056b3;
-    }
-    form {
-        display: flex;
-        flex-direction: column;
-    }
-    label {
-        font-weight: 600;
-        margin-top: 15px;
-        margin-bottom: 6px;
-        color: #555;
-    }
-    input[type=text], input[type=password], input[type=date], select, textarea {
-        padding: 10px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        font-size: 16px;
-        transition: border-color 0.3s ease;
-    }
-    input[type=text]:focus, input[type=password]:focus, input[type=date]:focus, select:focus, textarea:focus {
-        border-color: #007bff;
-        outline: none;
-    }
-    button {
-        margin-top: 25px;
-        padding: 12px;
-        border: none;
-        background-color: #28a745;
-        color: white;
-        font-size: 18px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 700;
-        transition: background-color 0.3s ease;
-    }
-    button:hover {
-        background-color: #1e7e34;
-    }
-</style>
+        body { font-family: '맑은 고딕', Malgun Gothic, 돋움, Dotum, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px 30px; background-color: #f8f9fa; border-radius: 12px; box-shadow: 0 0 15px rgba(0,0,0,0.1);}
+        h2 { text-align: center; color: #333; margin-bottom: 30px; }
+        form { display: flex; flex-direction: column; margin-bottom: 24px; }
+        label { font-weight: 600; margin-top: 15px; margin-bottom: 6px; color: #555; }
+        input[type=text] { padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
+        button { margin-top: 25px; padding: 12px; border: none; background-color: #007bff; color: white; font-size: 18px; border-radius: 8px; cursor: pointer; font-weight: 700; transition: background-color 0.3s; }
+        button:hover { background-color: #0056b3; }
+        .list { background: #fff; border-radius: 10px; box-shadow: 0 0 6px #e4e4e4; padding: 10px 14px;}
+        ul { list-style: none; padding: 0; }
+        li { padding: 10px 0; border-bottom: 1px solid #e4e4e4; display: flex; align-items: center; }
+        li:last-child { border-bottom: none; }
+        .actions { margin-left: auto; }
+        .actions form, .actions a { display: inline-block; }
+        .actions button, .actions a { background: none; border: none; color: #007bff; cursor: pointer; margin-left: 6px; font-size: 15px;}
+        .actions button.delete { color: #e02424; }
+        .actions button.delete:hover { text-decoration: underline; }
+        .actions a.edit:hover { text-decoration: underline; }
+        .main-btn { background-color: #28a745; }
+        .main-btn:hover { background-color: #1e7e34;}
+        .edit-highlight { background: #e8f4ff; }
+    </style>
 </head>
 <body>
-    <h2>장비 등록</h2>
+    <h2>장비 관리</h2>
 
     {% if error %}
       <div style="color:red; margin-bottom:10px;">{{ error }}</div>
     {% endif %}
 
-    <form method="POST">
-        <label>장비명(모델명)</label>
-        <input type="text" name="machine_name" required placeholder="예: SL600rf, 25톤 등">
-
-        <label>차량번호</label>
-        <input type="text" name="machine_number" required placeholder="예: 001가1234, 등">
-
-        <label>별칭/연식</label>
-        <input type="text" name="machine_alias" placeholder="예: 23년식, 제일비싼굴삭기 등">
-
-        <button type="submit">장비 등록</button>
-    </form>
+    {# 수정 모드 #}
+    {% if edit_machine %}
+      <form method="POST" style="background:#e8f4ff; border-radius:10px; padding:18px;">
+          <input type="hidden" name="action" value="edit_save">
+          <input type="hidden" name="edit_idx" value="{{ edit_machine_idx }}">
+          <label>장비명(모델명)</label>
+          <input type="text" name="machine_name" value="{{ edit_machine.name }}" required>
+          <label>차량번호</label>
+          <input type="text" name="machine_number" value="{{ edit_machine.number }}" required>
+          <label>별칭/연식</label>
+          <input type="text" name="machine_alias" value="{{ edit_machine.alias }}">
+          <button type="submit" class="main-btn">수정 저장</button>
+          <a href="{{ url_for('manage_machines') }}" style="margin-top:10px; color:#888; text-align:center;">수정 취소</a>
+      </form>
+    {% else %}
+      {# 등록 모드 #}
+      <form method="POST">
+          <input type="hidden" name="action" value="add">
+          <label>장비명(모델명)</label>
+          <input type="text" name="machine_name" required placeholder="예: SL600rf, 25톤 등">
+          <label>차량번호</label>
+          <input type="text" name="machine_number" required placeholder="예: 001가1234, 등">
+          <label>별칭/연식</label>
+          <input type="text" name="machine_alias" placeholder="예: 23년식, 제일비싼굴삭기 등">
+          <button type="submit" class="main-btn">장비 등록</button>
+      </form>
+    {% endif %}
 
     <h3>등록된 장비 목록</h3>
+    <div class="list">
     <ul>
-        {% for m in machines %}
-            {% if m.name and m.number %}
-            <li>
-                <b>{{ m.name }}</b> / {{ m.number }}
-                {% if m.alias %} / {{ m.alias }}{% endif %}
-                <!-- 삭제 버튼 (form, POST) -->
-                <form method="POST" action="{{ url_for('delete_machine') }}" style="display:inline;">
+      {% for m in machines %}
+        <li {% if edit_machine and m.number == edit_machine.number %}class="edit-highlight"{% endif %}>
+            <b>{{ m.name }}</b> / {{ m.number }}{% if m.alias %} / {{ m.alias }}{% endif %}
+            <span class="actions">
+                <!-- 수정 버튼 -->
+                <a href="{{ url_for('manage_machines', edit=loop.index0) }}" class="edit">[수정]</a>
+                <!-- 삭제 버튼 -->
+                <form method="POST" style="display:inline;">
+                    <input type="hidden" name="action" value="delete">
                     <input type="hidden" name="machine_number" value="{{ m.number }}">
-                    <button type="submit" style="color:red; margin-left:10px;" onclick="return confirm('정말 삭제할까요?');">삭제</button>
+                    <button type="submit" class="delete" onclick="return confirm('정말 삭제할까요?');">[삭제]</button>
                 </form>
-            </li>
-            {% endif %}
-        {% else %}
-            <li style="color: #888;">아직 등록된 장비가 없습니다.</li>
-        {% endfor %}
+            </span>
+        </li>
+      {% else %}
+        <li style="color: #888;">아직 등록된 장비가 없습니다.</li>
+      {% endfor %}
     </ul>
+    </div>
 
     <hr>
     <form action="{{ url_for('dashboard') }}">

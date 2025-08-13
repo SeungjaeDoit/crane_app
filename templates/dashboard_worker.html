@@ -1,206 +1,260 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8" />
-    <title>작업 목록</title>
-    <style>
-        body { font-family: '맑은 고딕', Malgun Gothic, 돋움, Dotum, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; background: #f8f9fa; border-radius: 10px; }
-        h2 { text-align: center; margin-bottom: 30px; }
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
-        th, td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #ddd; word-break: break-all; white-space: normal; position: relative; }
-        th { background-color: #eeeeee; }
-        tr:hover { background-color: #f1f1f1; }
-        .btn { padding: 7px 13px; border-radius: 6px; color: white; font-size: 14px; border: none; cursor: pointer; margin: 2px 0; min-width: 64px; white-space: nowrap; display: block; }
-        .edit-btn { background-color: #007bff; }
-        .edit-btn:hover { background-color: #0056b3; }
-        .complete-btn { background-color: #28a745; }
-        .complete-btn:hover { background-color: #218838; }
-        .undo-btn { background-color: #ff9800; }
-        .undo-btn:hover { background-color: #e65100; }
-        .actions {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            align-items: center;
-            justify-content: center;
-            min-width: 72px;
-            /* 두 줄 버튼 스타일 */
-        }
-        .more-link {
-            color: #2196F3;
-            cursor: pointer;
-            font-size: 13px;
-            text-decoration: underline;
-            margin-left: 3px;
-        }
-        /* 모달 스타일 */
-        #modalBg {
-            display: none;
-            position: fixed;
-            left: 0; top: 0;
-            width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.25);
-            justify-content: center; align-items: center;
-            z-index: 1000;
-        }
-        #modalContent {
-            background: white;
-            padding: 36px 32px;
-            border-radius: 12px;
-            min-width: 260px;
-            max-width: 90vw;
-            box-shadow: 0 2px 16px rgba(0,0,0,0.18);
-            text-align: center;
-        }
-        #modalContent h3 {
-            margin-bottom: 18px;
-        }
-        #modalContent .close-btn {
-            margin-top: 24px;
-            background: #2196F3;
-            color: white;
-            font-size: 15px;
-            border: none;
-            padding: 10px 32px;
-            border-radius: 7px;
-            cursor: pointer;
-        }
-        #modalContent .close-btn:hover {
-            background: #1976D2;
-        }
-        /* 복사 버튼 스타일 */
-        .copy-btn {
-            font-size: 12px;
-            color: #4caf50;
-            cursor: pointer;
-            margin-left: 5px;
-            text-decoration: underline;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>내 작업 목록</title>
+  <style>
+    :root{
+      --gap:12px; --radius:10px; --border:#e5e7eb; --bg:#f7f7f9; --muted:#6b7280;
+      --blue:#1e90ff; --green:#22c55e; --red:#ef4444;
+    }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'맑은 고딕',sans-serif; max-width:1080px; margin:36px auto; padding:0 16px; background:#fafafa;}
+    h2{font-size:26px; font-weight:800; text-align:center; margin:0 0 18px;}
+
+    .toolbar{display:flex; flex-wrap:wrap; align-items:center; gap:var(--gap); justify-content:center; margin-bottom:8px;}
+    .toolbar input{padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; min-width:210px; background:#fff;}
+    .btn{display:inline-flex; align-items:center; gap:6px; border:none; border-radius:8px; padding:10px 14px; font-size:14px; cursor:pointer; text-decoration:none;}
+    .btn-blue{background:var(--blue); color:#fff;}
+    .btn-ghost{background:#eef2f7; color:#334155;}
+    .btn-green{background:var(--green); color:#fff;}
+    .btn-red{background:var(--red); color:#fff;}
+
+    .calendar-wrap{display:flex; justify-content:center; margin: 10px 0 16px;}
+
+    .table-wrap{background:#fff; border-radius:var(--radius); border:1px solid var(--border); overflow:hidden;}
+    table{width:100%; border-collapse:collapse; table-layout:fixed;}
+    th,td{padding:14px 12px; text-align:center; border-bottom:1px solid var(--border);}
+    th{background:#f3f4f6; font-weight:700;}
+    tr:hover td{background:#fbfcff;}
+    .arrow{padding:8px 10px; border:1px solid var(--border); background:#fff; border-radius:8px; cursor:pointer;}
+    .status{font-weight:700;}
+    .done{color:#16a34a;} .todo{color:#334155;}
+
+    .detail-row{display:none;}
+    .detail{background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:14px; margin:8px; display:grid; grid-template-columns:1fr 1fr; gap:10px 18px; text-align:left;}
+    .detail-actions{grid-column:1 / -1; display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;}
+
+    .ellipsis{display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+    .copy-link{font-size:12px; text-decoration:underline; cursor:pointer; color:#2563eb;}
+    .price-chip{display:inline-block; margin-left:6px; padding:2px 6px; border-radius:8px; background:#eef2f7; font-size:12px; vertical-align:middle;}
+    .price-missing{display:inline-block; margin-left:6px; padding:2px 6px; border-radius:8px; background:#fff1f2; color:#b91c1c; font-size:12px; vertical-align:middle;}
+
+    @media (max-width:720px){ .detail{grid-template-columns:1fr;} .toolbar input{min-width:140px;} }
+  </style>
 </head>
 <body>
-    <h2>전체 작업 관리</h2>
-    <!-- 검색 폼 등 생략 -->
+  <h2>내 작업 목록</h2>
+
+  <!-- 검색/필터 (기사용: 거래처/날짜) -->
+  <form class="toolbar" method="get" action="{{ url_for('dashboard_worker') }}">
+    <input type="text"  name="client" placeholder="거래처" value="{{ request.args.get('client','') }}">
+    <input type="date"  name="date"                   value="{{ request.args.get('date','') }}">
+    <button type="submit" class="btn btn-blue">검색</button>
+    <a href="{{ url_for('dashboard_worker') }}" class="btn btn-ghost">초기화</a>
+  </form>
+
+  <!-- 캘린더 보기 -->
+  <div class="calendar-wrap">
+    <a href="{{ url_for('calendar_view') }}" class="btn btn-green">📅 캘린더 보기</a>
+  </div>
+
+  <div class="table-wrap">
+    {% if jobs and jobs|length>0 %}
     <table>
-        <thead>
-            <tr>
-                <th>날짜</th>
-                <th>시간</th>
-                <th>기사</th>
-                <th>장비</th>
-                <th>거래처</th>
-                <th>위치</th>
-                <th>요청사항</th>
-                <th>상태</th>
-                <th>관리</th>
-            </tr>
-        </thead>
-        <tbody>
+      <colgroup>
+        <col style="width:110px;">  <!-- 날짜 -->
+        <col style="width:80px;">   <!-- 시간 -->
+        <col style="width:220px;">  <!-- 장비 -->
+        <col style="width:260px;">  <!-- 위치 -->
+        <col style="width:200px;">  <!-- 거래처(+금액 or 금액설정X) -->
+        <col style="width:100px;">  <!-- 상태 -->
+        <col style="width:220px;">  <!-- 관리 -->
+      </colgroup>
+      <thead>
+        <tr>
+          <th>날짜</th><th>시간</th><th>장비(명/차량번호)</th><th>위치</th><th>거래처 / 금액</th><th>상태</th><th>관리</th>
+        </tr>
+      </thead>
+      <tbody>
         {% for job in jobs %}
-            <tr>
-                <td>{{ job.date }}</td>
-                <td>{{ job.time }}</td>
-                <!-- 기사 -->
-                <td>
-                  {% set val = job.worker or job.username %}
-                  {% if val and val|length > 7 %}
-                    {{ val[:7] ~ '...' }}
-                    <span class="more-link" onclick="showMore('{{ val|replace("'", "\\'")|replace('\n','<br>') }}','기사')">더보기</span>
-                  {% else %}
-                    {{ val }}
-                  {% endif %}
-                </td>
-                <!-- 장비 -->
-                <td>
-                  {% set val = job.machine_name or job.machine %}
-                  {% if val and val|length > 7 %}
-                    {{ val[:7] ~ '...' }}
-                    <span class="more-link" onclick="showMore('{{ val|replace("'", "\\'")|replace('\n','<br>') }}','장비')">더보기</span>
-                  {% else %}
-                    {{ val }}
-                  {% endif %}
-                </td>
-                <!-- 거래처 -->
-                <td>
-                  {% set val = job.client %}
-                  {% if val and val|length > 7 %}
-                    {{ val[:7] ~ '...' }}
-                    <span class="more-link" onclick="showMore('{{ val|replace("'", "\\'")|replace('\n','<br>') }}','거래처')">더보기</span>
-                  {% else %}
-                    {{ val }}
-                  {% endif %}
-                </td>
-                <!-- 위치 -->
-                <td>
-                  {% set val = job.location %}
-                  {% if val and val|length > 7 %}
-                    {{ val[:7] ~ '...' }}
-                    <span class="more-link" onclick="showMore('{{ val|replace("'", "\\'")|replace('\n','<br>') }}','위치')">더보기</span>
-                    <span class="copy-btn" onclick="copyToClipboard('{{ val|replace("'", "\\'") }}')">복사</span>
-                  {% else %}
-                    {{ val }}
-                    <span class="copy-btn" onclick="copyToClipboard('{{ val|replace("'", "\\'") }}')">복사</span>
-                  {% endif %}
-                </td>
-                <!-- 요청사항 -->
-                <td>
-                  {% set val = job.note %}
-                  {% if val and val|length > 7 %}
-                    {{ val[:7] ~ '...' }}
-                    <span class="more-link" onclick="showMore('{{ val|replace("'", "\\'")|replace('\n','<br>') }}','요청사항')">더보기</span>
-                  {% else %}
-                    {{ val }}
-                  {% endif %}
-                </td>
-                <td>{{ job.status if job.status else '진행중' }}</td>
-                <td class="actions">
-                    {% if job.status == '완료' %}
-                        <a href="{{ url_for('toggle_complete', job_index=loop.index0) }}" class="btn undo-btn"
-                           onclick="return confirm('완료 상태를 취소하시겠습니까?');">완료취소</a>
-                    {% else %}
-                        <a href="{{ url_for('toggle_complete', job_index=loop.index0) }}" class="btn complete-btn"
-                           onclick="return confirm('작업을 완료 처리하시겠습니까?');">완료</a>
-                    {% endif %}
-                    <a href="{{ url_for('edit_job', job_index=loop.index0) }}" class="btn edit-btn">수정</a>
-                </td>
-            </tr>
+        {% set idx = job._idx if job._idx is defined else loop.index0 %}
+        {% set mname = job.machine_name or job.machine %}
+        {% set mnum  = job.machine_number %}
+        {% set malias = job.machine_alias %}
+        {% set myear  = job.machine_year %}
+        {% set amt = (job.amount_man if job.amount_man is defined else 0) | int %}
+        <tr>
+          <td>{{ job.date }}</td>
+          <td>{{ job.time or '-' }}</td>
+
+          <td>
+            <span class="ellipsis" title="{{ (mname or '-') ~ ((' / ' ~ mnum) if mnum else '') }}">
+              {{ mname or '-' }}{% if mnum %} / {{ mnum }}{% endif %}
+            </span>
+          </td>
+
+          <td>
+            {% set loc = job.location or '-' %}
+            <span class="ellipsis" title="{{ loc }}">{{ loc }}</span>
+            {% if job.location %}
+              <span class="copy-link" onclick="copyToClipboard(`{{ job.location|replace('`','\\`') }}`)">복사</span>
+            {% endif %}
+          </td>
+
+          <td>
+            {% set client = job.client or '-' %}
+            <span class="ellipsis" title="{{ client }}">{{ client }}</span>
+            {% if job.share_amount and amt > 0 %}
+              <span class="price-chip" title="{{ amt }}만">₩{{ amt }}만</span>
+            {% else %}
+              <span class="price-missing">금액설정 X</span>
+            {% endif %}
+          </td>
+
+          <td id="status-{{ idx }}" class="status {{ 'done' if job.status=='완료' else 'todo' }}">{{ job.status or '진행중' }}</td>
+
+          <td style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+            <button type="button" class="arrow" data-target="d-{{ loop.index0 }}">▼</button>
+            <button type="button" class="btn btn-ghost"
+                    data-index="{{ idx }}"
+                    data-url="{{ url_for('toggle_complete_api', job_index=idx) }}"
+                    onclick="toggleStatus(this)">
+              {% if job.status=='완료' %}완료취소{% else %}완료{% endif %}
+            </button>
+            <a href="{{ url_for('edit_job', job_index=idx) }}" class="btn btn-blue">수정</a>
+          </td>
+        </tr>
+
+        <tr id="d-{{ loop.index0 }}" class="detail-row">
+          <td colspan="7">
+            <div class="detail">
+              <div>
+                <b>장비:</b>
+                {{ mname or '-' }}{% if mnum %} / {{ mnum }}{% endif %}
+                {% if malias %} / <span style="color:#6b7280;">{{ malias }}</span>{% endif %}
+                {% if myear  %} / <span style="color:#6b7280;">{{ myear }}</span>{% endif %}
+              </div>
+              <div><b>기간:</b>
+                {% if job.duration_type == 'N시간' %}
+                  {{ job.duration_hours }}시간
+                {% elif job.duration_type == '반나절' %}
+                  반나절
+                {% else %}
+                  하루
+                {% endif %}
+              </div>
+              <div><b>위치:</b>
+                {{ job.location or '-' }}
+                {% if job.location %}
+                  <span class="copy-link" onclick="copyToClipboard(`{{ job.location|replace('`','\\`') }}`)">복사</span>
+                {% endif %}
+              </div>
+              <div><b>거래처:</b> {{ job.client or '-' }}</div>
+              <div style="grid-column:1 / -1;"><b>요청사항:</b> {{ job.note or '-' }}</div>
+
+              <div class="detail-actions">
+                <a href="{{ url_for('edit_job', job_index=idx) }}" class="btn btn-blue">수정</a>
+                <button type="button" class="btn btn-green"
+                        data-index="{{ idx }}"
+                        data-url="{{ url_for('toggle_complete_api', job_index=idx) }}"
+                        onclick="toggleStatus(this)">
+                  {% if job.status=='완료' %}완료취소{% else %}완료{% endif %}
+                </button>
+              </div>
+            </div>
+          </td>
+        </tr>
         {% endfor %}
-        </tbody>
+      </tbody>
     </table>
+    {% else %}
+      <div style="padding:24px; text-align:center;">할당된 작업이 없습니다.</div>
+    {% endif %}
+  </div>
 
-<a href="{{ url_for('edit_worker') }}" class="btn edit-btn">내 정보 수정</a>
-<form action="{{ url_for('logout') }}" method="post" style="display:inline;">
-  <button type="submit" style="font-size: 16px; padding: 6px 14px; cursor: pointer;">🚪 로그아웃</button>
-</form>
+  <div style="display:flex; justify-content:center; margin:18px 0; gap:10px;">
+    <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">🏠 대시보드</a>
+    <a class="btn btn-blue"  href="{{ url_for('edit_worker') }}">내 정보 수정</a>
+    <form action="{{ url_for('logout') }}" method="post" style="display:inline;">
+      <button type="submit" class="btn btn-red">🚪 로그아웃</button>
+    </form>
+  </div>
 
-    <!-- 더보기 모달 -->
-    <div id="modalBg">
-        <div id="modalContent">
-            <h3 id="modalTitle">상세 내용</h3>
-            <div id="modalText"></div>
-            <button class="close-btn" onclick="closeModal()">닫기</button>
-        </div>
-    </div>
-    <script>
-      function showMore(val, title){
-        document.getElementById('modalBg').style.display='flex';
-        document.getElementById('modalText').innerHTML = val.replace(/\\n/g, '<br>');
-        document.getElementById('modalTitle').innerText = title + ' 전체 내용';
-      }
-      function closeModal(){
-        document.getElementById('modalBg').style.display='none';
-      }
-      window.onclick = function(event) {
-        var modal = document.getElementById('modalBg');
-        if (event.target === modal) closeModal();
-      }
-      function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => {
-          alert('복사되었습니다: ' + text);
-        }, () => {
-          alert('복사에 실패했습니다.');
+  <script>
+    // 상세 펼침
+    document.querySelectorAll('.arrow').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.dataset.target;
+        const row = document.getElementById(id);
+        const open = row.style.display === 'table-row';
+        row.style.display = open ? 'none' : 'table-row';
+        btn.textContent = open ? '▼' : '▲';
+      });
+    });
+
+    // 복사
+    function copyToClipboard(text){
+      navigator.clipboard.writeText(text).then(()=>{
+        alert('복사되었습니다: ' + text);
+      }).catch(()=>{
+        alert('복사에 실패했습니다.');
+      });
+    }
+
+    // 상태 토글(AJAX)
+    async function toggleStatus(btn){
+      const idx = btn.dataset.index;
+      const url = btn.dataset.url;
+
+      try{
+        const res = await fetch(url, {
+          method:'POST',
+          headers:{ 'X-Requested-With':'XMLHttpRequest', 'Accept':'application/json' },
+          credentials:'same-origin'
         });
+
+        if (res.redirected){
+          alert('로그인이 필요합니다.');
+          location.href = res.url;
+          return;
+        }
+
+        const ct = res.headers.get('content-type') || '';
+        if (!ct.includes('application/json')){
+          if (res.status === 401){
+            alert('로그인이 필요합니다.');
+            location.href = "{{ url_for('login') }}";
+          } else {
+            const html = await res.text();
+            console.error('Non-JSON response:', res.status, html);
+            alert('요청 처리 중 오류가 발생했습니다.');
+          }
+          return;
+        }
+
+        const data = await res.json();
+        if(!res.ok || !data?.success){
+          alert('변경 실패: ' + (data?.error || res.status));
+          return;
+        }
+
+        // 상태 셀 갱신
+        const cell = document.getElementById('status-'+idx);
+        if(cell){
+          cell.textContent = data.status || '';
+          cell.classList.toggle('done', data.status==='완료');
+          cell.classList.toggle('todo', data.status!=='완료');
+        }
+        // 동일 인덱스 버튼 라벨 동기화
+        document.querySelectorAll(`button[data-index="${idx}"]`).forEach(b=>{
+          b.textContent = (data.status==='완료') ? '완료취소' : '완료';
+        });
+
+      }catch(err){
+        console.error(err);
+        alert('네트워크 오류');
       }
-    </script>
+    }
+  </script>
 </body>
 </html>

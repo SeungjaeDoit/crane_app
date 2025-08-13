@@ -28,8 +28,9 @@
 
     <button type="submit">정보 수정하기</button>
   </form>
+
   <div class="back-btn">
-  <a href="{{ url_for('dashboard_worker') }}">🏠 메인화면으로 돌아가기</a>
-</div>
+    <a href="{{ url_for(back_endpoint) }}">{{ back_label }}</a>
+  </div>
 </body>
 </html>

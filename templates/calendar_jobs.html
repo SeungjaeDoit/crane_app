@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>작업 캘린더</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.11/index.global.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.11/index.global.min.js"></script>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'맑은 고딕',sans-serif; max-width:1100px; margin:32px auto; padding:0 16px;}
+    h2{font-size:26px; text-align:center; margin:0 0 16px;}
+    .chips{display:flex; gap:10px; justify-content:center; margin-bottom:12px;}
+    .chip{background:#f3f4f6; border:1px solid #e5e7eb; border-radius:999px; padding:6px 12px; font-size:14px;}
+
+    /* 날짜 셀 안의 집계 뱃지 */
+    .fc-counts{margin-top:4px; display:flex; flex-direction:column; gap:2px; font-size:11px; line-height:1.2;}
+    .fc-counts .badge{display:inline-block; width:max-content; padding:1px 6px; border-radius:6px; background:#e5e7eb;}
+    .fc-counts .badge.done{background:#d1fae5;}    /* 초록 */
+    .fc-counts .badge.todo{background:#fee2e2;}    /* 빨강 */
+    /* 셀 안 여백 확보(기본 타이틀과 겹치지 않게) */
+    .fc-daygrid-day-frame{padding:4px;}
+  </style>
+</head>
+<body>
+  <h2>작업 캘린더</h2>
+  <div class="chips" id="top-counters" style="display:none;">
+    <span class="chip" id="chip-total">총 작업: 0</span>
+    <span class="chip" id="chip-done">완료: 0</span>
+    <span class="chip" id="chip-todo">미수: 0</span>
+  </div>
+  <div id="calendar"></div>
+
+  <script>
+    // 날짜 객체를 'YYYY-MM-DD'로 (타임존 안전)
+    function toYMD(d){
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,'0');
+      const day = String(d.getDate()).padStart(2,'0');
+      return `${y}-${m}-${day}`;
+    }
+
+    async function loadCounts(){
+      const res = await fetch("{{ url_for('calendar_stats') }}", {
+        headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'},
+        credentials:'same-origin'
+      });
+      if(!res.ok) return {success:false, counts:{}};
+      return res.json();
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const stats = await loadCounts();
+      const counts = stats.success ? stats.counts : {};
+
+      // 상단 총계 표시(옵션)
+      if (stats.success){
+        let total=0, done=0, todo=0;
+        Object.values(counts).forEach(c => { total+=c.total; done+=c.done; todo+=c.todo; });
+        document.getElementById('top-counters').style.display = 'flex';
+        document.getElementById('chip-total').textContent = `총 작업: ${total}`;
+        document.getElementById('chip-done').textContent  = `완료: ${done}`;
+        document.getElementById('chip-todo').textContent  = `미수: ${todo}`;
+      }
+
+      const calendarEl = document.getElementById('calendar');
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'ko',
+        height: 'auto',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: ''
+        },
+        // 날짜 클릭 → /jobs?date=YYYY-MM-DD 로 이동
+        dateClick: function(info){
+          const target = "{{ url_for('view_jobs') }}" + "?date=" + info.dateStr;
+          window.location.href = target;
+        },
+        // 각 날짜 셀에 집계 뱃지 주입
+        dayCellDidMount: function(arg){
+          const ds = toYMD(arg.date);
+          const c = counts[ds];
+          if (!c) return;
+
+          const wrap = document.createElement('div');
+          wrap.className = 'fc-counts';
+          wrap.innerHTML = `
+            <span class="badge">총 ${c.total}</span>
+            <span class="badge done">완료 ${c.done}</span>
+            <span class="badge todo">미수 ${c.todo}</span>
+          `;
+          const frame = arg.el.querySelector('.fc-daygrid-day-frame');
+          if (frame) frame.appendChild(wrap);
+        },
+        // 기존 event들은 표시하지 않음
+        events: []  // 필요 시 제거
+      });
+
+      calendar.render();
+    });
+  </script>
+</body>
+</html>

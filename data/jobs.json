@@ -1,18 +1,6 @@
 {
   "홍예크레인": [
     {
-      "date": "2025-08-07",
-      "time": "05:00",
-      "worker": "이윤재",
-      "machine_name": "mk80",
-      "machine_number": "007가6743",
-      "machine_alias": "21년식",
-      "client": "테스트3테",
-      "location": "테스트4테",
-      "note": "테스트",
-      "status": "진행중"
-    },
-    {
       "date": "2025-08-22",
       "time": "07:00",
       "worker": "이영재",
@@ -23,6 +11,32 @@
       "location": "테스트5",
       "note": "테스트6",
       "status": "진행중"
+    },
+    {
+      "date": "2025-08-08",
+      "time": "04:30",
+      "worker": "이윤재",
+      "machine_name": "mk80",
+      "machine_number": "007가6743",
+      "machine_alias": "21년식",
+      "client": "DL",
+      "location": "두성",
+      "note": "하루용",
+      "status": "완료"
+    },
+    {
+      "date": "2025-08-14",
+      "time": "07:20",
+      "worker": "이영재",
+      "machine_name": "새로산MK",
+      "machine_number": "1234",
+      "machine_alias": "2005",
+      "client": "롯데",
+      "location": "충요",
+      "note": "테스트입니다. 잘보세요",
+      "status": "완료",
+      "duration_type": "N시간",
+      "duration_hours": "11"
     }
   ]
 }
