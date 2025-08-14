@@ -1,113 +1,151 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>기사 등록</title>
-    <style>
-    body {
-        font-family: '맑은 고딕', Malgun Gothic, 돋움, Dotum, sans-serif;
-        max-width: 600px;
-        margin: 50px auto;
-        padding: 20px 30px;
-        background-color: #f8f9fa;
-        border-radius: 12px;
-        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  <meta charset="UTF-8" />
+  <title>기사 등록/관리</title>
+  <style>
+    :root{
+      --blue:#2563eb; --green:#22c55e; --red:#ef4444; --gray:#9ca3af;
+      --bg:#f8f9fa; --card:#ffffff; --border:#e5e7eb;
     }
-    h2 {
-        text-align: center;
-        color: #333;
-        margin-bottom: 30px;
-    }
-    ul {
-        list-style: none;
-        padding: 0;
-    }
-    ul li {
-        margin: 12px 0;
-    }
-    a {
-        text-decoration: none;
-        color: #fff;
-        background-color: #007bff;
-        display: block;
-        padding: 12px;
-        border-radius: 6px;
-        font-weight: 600;
-        text-align: center;
-        transition: background-color 0.3s ease;
-    }
-    a:hover {
-        background-color: #0056b3;
-    }
-    form {
-        display: flex;
-        flex-direction: column;
-    }
-    label {
-        font-weight: 600;
-        margin-top: 15px;
-        margin-bottom: 6px;
-        color: #555;
-    }
-    input[type=text], input[type=password], input[type=date], select, textarea {
-        padding: 10px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        font-size: 16px;
-        transition: border-color 0.3s ease;
-    }
-    input[type=text]:focus, input[type=password]:focus, input[type=date]:focus, select:focus, textarea:focus {
-        border-color: #007bff;
-        outline: none;
-    }
-    button {
-        margin-top: 25px;
-        padding: 12px;
-        border: none;
-        background-color: #28a745;
-        color: white;
-        font-size: 18px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 700;
-        transition: background-color 0.3s ease;
-    }
-    button:hover {
-        background-color: #1e7e34;
-    }
-</style>
+    body{font-family:'맑은 고딕', Malgun Gothic, Dotum, sans-serif; max-width:780px; margin:36px auto; padding:20px; background:var(--bg);}
+    h2{margin:0 0 18px; text-align:center;}
+    .card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 20px; box-shadow:0 2px 10px rgba(0,0,0,.04);}
+    label{font-weight:700; display:block; margin:10px 0 6px;}
+    input[type="text"]{width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:15px;}
+    .btn{display:inline-block; border:none; border-radius:8px; padding:9px 14px; font-size:14px; color:#fff; cursor:pointer; text-decoration:none}
+    .btn-primary{background:var(--green);} .btn-primary:hover{background:#16a34a;}
+    .btn-blue{background:var(--blue);}   .btn-blue:hover{background:#1d4ed8;}
+    .btn-red{background:var(--red);}     .btn-red:hover{background:#dc2626;}
+    .btn-gray{background:#e5e7eb; color:#111827;} .btn-gray:hover{background:#d1d5db;}
+    .stack{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;}
+    .list{margin-top:16px;}
+    .item{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px; border:1px solid var(--border); border-radius:10px; background:#fff;}
+    .who{font-size:15px; font-weight:700;}
+    .role{display:inline-block; margin:0 6px; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:700; background:#eef2ff; color:#3730a3;}
+    .role.manager{background:#dcfce7; color:#065f46;}
+    .role.pending{background:#fff7ed; color:#9a3412;}
+    .actions{display:flex; gap:8px; flex-wrap:wrap;}
+    .muted{color:#6b7280; font-size:13px; margin-top:8px;}
+    hr{border:none; border-top:1px solid var(--border); margin:18px 0;}
+    .footer{margin-top:18px; text-align:center;}
+    form.inline { display:inline; }
+  </style>
 </head>
 <body>
-    <h2>기사 등록</h2>
+  <h2>기사 등록/관리</h2> 
+  {% if request.args.get('from') == 'add_job' %}
+    <p>
+      <a href="{{ url_for('add_job') }}"
+         style="display:inline-block;margin:8px 0;padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;text-decoration:none;">
+        ← 작업 등록으로 돌아가기
+      </a>
+    </p>
+  {% endif %}
 
-    {% if error %}
-      <div style="color:red; margin-bottom:10px;">{{ error }}</div>
-    {% endif %}
+  {% if error %}
+    <div class="card" style="border-color:#fecaca; background:#fef2f2; color:#991b1b; margin-bottom:12px;">
+      {{ error }}
+    </div>
+  {% endif %}
 
-    <form method="POST">
-        <input type="text" name="name" placeholder="기사 이름 입력" required>
-        <input type="text" name="phone" placeholder="전화번호 입력 (예: 01012345678)" required pattern="^\d{10,11}$" title="전화번호는 숫자 10~11자리여야 합니다.">
-        <button type="submit">등록</button>
+  <!-- 등록 폼 -->
+  <div class="card" style="margin-bottom:16px;">
+    <form method="POST" class="stack" autocomplete="off">
+      <!-- from 보존 -->
+      <input type="hidden" name="from" value="{{ request.args.get('from','') }}">
+
+      <div style="flex:1; min-width:200px;">
+        <label for="w_name">이름</label>
+        <input id="w_name" type="text" name="name" placeholder="예: 홍길동" required>
+      </div>
+      <div style="flex:1; min-width:220px;">
+        <label for="w_phone">전화번호</label>
+        <input id="w_phone" type="text" name="phone" inputmode="numeric" pattern="[0-9]{10,11}"
+               title="숫자 10~11자리" placeholder="01012345678" required>
+      </div>
+      <div>
+        <button type="submit" class="btn btn-primary">등록</button>
+      </div>
     </form>
+    <div class="muted">※ 전화번호는 숫자만 입력하세요. 등록후 기사 로그인시 비밀번호는 휴대폰번호 뒷4자리 입니다.</div>
+  </div>
 
-    <h3>등록된 기사 목록</h3>
-    <ul>
-        {% for worker in workers %}
-        <li>
-            {{ worker.name }} ({{ worker.phone }})
-            <!-- 삭제 버튼 (POST) -->
-            <form method="POST" action="{{ url_for('delete_worker', username=worker.username) }}" style="display:inline;">
-                <button type="submit" onclick="return confirm('정말 삭제하시겠습니까?');">삭제</button>
-            </form>
-        </li>
-        {% else %}
-        <li style="color: #888;">아직 등록된 기사가 없습니다.</li>
-        {% endfor %}
-    </ul>
+  <!-- 목록 -->
+  <div class="card">
+    <h3 style="margin:0 0 10px;">등록된 기사 목록</h3>
+
+    <div class="list">
+      {% for w in workers %}
+        {% set _role = (w.get('role') or 'worker') %}
+        {% set is_manager = _role in ['manager','boss'] %}
+        {% set badge_text = '관리자' if is_manager else '기사' %}
+        {% set badge_class = 'manager' if is_manager else '' %}
+
+        <div class="item">
+          <div class="who">
+            {{ w.name }}
+            <span class="role {{ 'pending' if (w.get('status') == 'pending') else badge_class }}">
+              {% if w.get('status') == 'pending' %}가입대기{% else %}{{ badge_text }}{% endif %}
+            </span>
+            ({{ w.phone }})
+          </div>
+
+          <div class="actions">
+            {% if (w.get('status') or '') == 'pending' %}
+              <form class="inline" action="{{ url_for('approve_worker', username=w.username) }}" method="post">
+                <input type="hidden" name="from" value="{{ request.args.get('from','') }}">
+                <button class="btn btn-blue" type="submit">승인</button>
+              </form>
+              <form class="inline" action="{{ url_for('delete_worker', username=w.username) }}" method="post">
+                <input type="hidden" name="from" value="{{ request.args.get('from','') }}">
+                <button class="btn btn-red" type="submit" onclick="return confirm('삭제하시겠습니까?');">거절</button>
+              </form>
+            {% else %}
+              {# 수정 링크에 from 쿼리 부착 (있으면) #}
+              {% if request.args.get('from') %}
+                <a class="btn btn-blue"
+                   href="{{ url_for('edit_worker', worker_username=w.username, from=request.args.get('from')) }}">
+                  수정
+                </a>
+              {% else %}
+                <a class="btn btn-blue"
+                   href="{{ url_for('edit_worker', worker_username=w.username) }}">
+                  수정
+                </a>
+              {% endif %}
+
+              <form class="inline" action="{{ url_for('delete_worker', username=w.username) }}" method="post">
+                <input type="hidden" name="from" value="{{ request.args.get('from','') }}">
+                <button class="btn btn-red" type="submit" onclick="return confirm('정말 삭제하시겠습니까?');">삭제</button>
+              </form>
+
+              {% if w.get('role') in ['manager','boss'] %}
+                <form class="inline" action="{{ url_for('revoke_manager', username=w.username) }}" method="post">
+                  <input type="hidden" name="from" value="{{ request.args.get('from','') }}">
+                  <button class="btn btn-gray" type="submit">관리자해제</button>
+                </form>
+              {% else %}
+                <form class="inline" action="{{ url_for('grant_manager', username=w.username) }}" method="post">
+                  <input type="hidden" name="from" value="{{ request.args.get('from','') }}">
+                  <button class="btn btn-primary" type="submit"
+                          onclick="return confirm('해당 직원을 관리자로 설정하시겠습니까? 관리자는 사장과 동일한 권한을 가집니다. 신중히 부여하세요.');">
+                    관리자권한
+                  </button>
+                </form>
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+      {% else %}
+        <div class="muted">등록된 기사가 없습니다.</div>
+      {% endfor %}
+    </div>
 
     <hr>
-    <form action="{{ url_for('dashboard') }}">
-        <button type="submit" style="font-size: 16px;">🏠 메인화면으로 돌아가기</button>
-    </form>
+    <div class="footer">
+      <a class="btn btn-gray" href="{{ url_for('dashboard') }}">🏠 메인화면으로 돌아가기</a>
+    </div>
+  </div>
 </body>
 </html>

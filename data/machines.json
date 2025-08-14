@@ -9,6 +9,21 @@
       "name": "SL300RF",
       "number": "007가1234",
       "alias": "테스트"
+    },
+    {
+      "name": "KOBELCO",
+      "number": "3232",
+      "alias": "1999"
+    },
+    {
+      "name": "립헬",
+      "number": "4423",
+      "alias": "구구구"
     }
-  ]
+  ],
+  "케이중기": [],
+  "쓰레기회사": [],
+  "regitest01": [],
+  "rtest01": [],
+  "rtest02": []
 }

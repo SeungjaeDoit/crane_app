@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>가입 충돌 안내</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'맑은 고딕',sans-serif;background:#f6f7fb;margin:0;padding:24px;}
+    .card{max-width:560px;margin:30px auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px;}
+    h2{margin:0 0 12px;text-align:center}
+    p{line-height:1.6}
+    .actions{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+    .btn{border:none;border-radius:8px;padding:10px 14px;font-size:14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+    .btn-blue{background:#2563eb;color:#fff}
+    .btn-ghost{background:#eef2f7;color:#111827}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>가입 확인이 필요합니다</h2>
+    <p>
+      {{ message }}<br>
+      <b>회사:</b> {{ company }}<br>
+      <b>기존 기사:</b> {{ existing_name }} ({{ existing_phone or '전화번호 없음' }})<br>
+      <b>신규 신청자:</b> {{ name }} ({{ new_phone or '전화번호 미입력' }})
+    </p>
+
+    <div class="actions">
+      {% if show_homonym %}
+      <form method="post" action="{{ url_for('resolve_homonym') }}">
+        <input type="hidden" name="company" value="{{ company }}">
+        <input type="hidden" name="name" value="{{ name }}">
+        <input type="hidden" name="phone" value="{{ new_phone }}">
+        <input type="hidden" name="password" value="{{ password }}">
+        <button class="btn btn-blue" type="submit">동명이인인가요?</button>
+      </form>
+      {% endif %}
+      <a class="btn btn-ghost" href="{{ url_for('login') }}">로그인창으로 돌아가기</a>
+    </div>
+  </div>
+</body>
+</html>

@@ -16,7 +16,6 @@
     .fc-counts .badge{display:inline-block; width:max-content; padding:1px 6px; border-radius:6px; background:#e5e7eb;}
     .fc-counts .badge.done{background:#d1fae5;}    /* 초록 */
     .fc-counts .badge.todo{background:#fee2e2;}    /* 빨강 */
-    /* 셀 안 여백 확보(기본 타이틀과 겹치지 않게) */
     .fc-daygrid-day-frame{padding:4px;}
   </style>
 </head>
@@ -25,12 +24,12 @@
   <div class="chips" id="top-counters" style="display:none;">
     <span class="chip" id="chip-total">총 작업: 0</span>
     <span class="chip" id="chip-done">완료: 0</span>
-    <span class="chip" id="chip-todo">미수: 0</span>
+    <span class="chip" id="chip-todo">진행중: 0</span>
   </div>
   <div id="calendar"></div>
 
   <script>
-    // 날짜 객체를 'YYYY-MM-DD'로 (타임존 안전)
+    // 날짜를 'YYYY-MM-DD'로
     function toYMD(d){
       const y = d.getFullYear();
       const m = String(d.getMonth()+1).padStart(2,'0');
@@ -51,14 +50,14 @@
       const stats = await loadCounts();
       const counts = stats.success ? stats.counts : {};
 
-      // 상단 총계 표시(옵션)
+      // 상단 총계
       if (stats.success){
         let total=0, done=0, todo=0;
         Object.values(counts).forEach(c => { total+=c.total; done+=c.done; todo+=c.todo; });
         document.getElementById('top-counters').style.display = 'flex';
         document.getElementById('chip-total').textContent = `총 작업: ${total}`;
         document.getElementById('chip-done').textContent  = `완료: ${done}`;
-        document.getElementById('chip-todo').textContent  = `미수: ${todo}`;
+        document.getElementById('chip-todo').textContent  = `진행중: ${todo}`;
       }
 
       const calendarEl = document.getElementById('calendar');
@@ -66,18 +65,33 @@
         initialView: 'dayGridMonth',
         locale: 'ko',
         height: 'auto',
+
+        // today 버튼 한글 라벨 강제
+        buttonText: { today: '오늘' },
+
+        // 커스텀 버튼 정의
+        customButtons: {
+          goHome: {
+            text: '메인메뉴로 돌아가기',
+            click() { window.location.href = "{{ url_for('dashboard') }}"; }
+          }
+        },
+
+        // today 오른쪽에 커스텀 버튼 배치
         headerToolbar: {
-          left: 'prev,next today',
+          left: 'prev,next today goHome',
           center: 'title',
           right: ''
         },
-        // 날짜 클릭 → /jobs?date=YYYY-MM-DD 로 이동
-        dateClick: function(info){
+
+        // 날짜 클릭 → 해당 날짜로 작업 목록 이동
+        dateClick(info){
           const target = "{{ url_for('view_jobs') }}" + "?date=" + info.dateStr;
           window.location.href = target;
         },
-        // 각 날짜 셀에 집계 뱃지 주입
-        dayCellDidMount: function(arg){
+
+        // 각 날짜 셀에 집계 뱃지 출력
+        dayCellDidMount(arg){
           const ds = toYMD(arg.date);
           const c = counts[ds];
           if (!c) return;
@@ -85,15 +99,16 @@
           const wrap = document.createElement('div');
           wrap.className = 'fc-counts';
           wrap.innerHTML = `
-            <span class="badge">총 ${c.total}</span>
+            <span class="badge">총 작업 ${c.total}</span>
             <span class="badge done">완료 ${c.done}</span>
-            <span class="badge todo">미수 ${c.todo}</span>
+            <span class="badge todo">진행중 ${c.todo}</span>
           `;
           const frame = arg.el.querySelector('.fc-daygrid-day-frame');
           if (frame) frame.appendChild(wrap);
         },
-        // 기존 event들은 표시하지 않음
-        events: []  // 필요 시 제거
+
+        // 일정 이벤트는 사용하지 않음
+        events: []
       });
 
       calendar.render();

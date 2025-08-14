@@ -21,5 +21,69 @@
     "name": "이영재",
     "phone": "01030447135",
     "status": "active"
+  },
+  "홍예크레인백서현": {
+    "password": "5949",
+    "role": "worker",
+    "company": "홍예크레인",
+    "name": "백서현",
+    "phone": "01019195949",
+    "status": "active"
+  },
+  "홍예크레인이케이": {
+    "password": "cc0303",
+    "role": "worker",
+    "company": "홍예크레인",
+    "name": "이케이",
+    "phone": "01033332222",
+    "status": "active"
+  },
+  "케이중기boss": {
+    "password": "cc0303",
+    "role": "boss",
+    "company": "케이중기",
+    "phone": "01054227135",
+    "company_code": "121212",
+    "name": ""
+  },
+  "쓰레기회사boss": {
+    "password": "cc0303",
+    "role": "boss",
+    "company": "쓰레기회사",
+    "phone": "01059292929",
+    "company_code": "321321",
+    "name": ""
+  },
+  "regitest01boss": {
+    "password": "cc0303",
+    "role": "boss",
+    "company": "regitest01",
+    "phone": "01000001111",
+    "company_code": "010101",
+    "name": "사장님"
+  },
+  "regitest01123": {
+    "password": "3333",
+    "role": "worker",
+    "company": "regitest01",
+    "name": "123",
+    "phone": "3333333333",
+    "status": "active"
+  },
+  "rtest01boss": {
+    "password": "cc0303",
+    "role": "boss",
+    "company": "rtest01",
+    "phone": "01077777777",
+    "company_code": "777777",
+    "name": "사장님"
+  },
+  "rtest02boss": {
+    "password": "cc0303",
+    "role": "boss",
+    "company": "rtest02",
+    "phone": "01066666666",
+    "company_code": "666666",
+    "name": "사장님"
   }
 }

@@ -28,6 +28,13 @@
 </head>
 <body>
     <h2>장비 관리</h2>
+    {% if request.args.get('from') == 'add_job' %}
+      <p>
+        <a href="{{ url_for('add_job') }}" style="display:inline-block;margin:8px 0;padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;text-decoration:none;">
+          ← 작업 등록으로 돌아가기
+        </a>
+      </p>
+    {% endif %}
 
     {% if error %}
       <div style="color:red; margin-bottom:10px;">{{ error }}</div>
@@ -36,6 +43,7 @@
     {# 수정 모드 #}
     {% if edit_machine %}
       <form method="POST" style="background:#e8f4ff; border-radius:10px; padding:18px;">
+          <input type="hidden" name="from" value="{{ request.args.get('from','') }}">
           <input type="hidden" name="action" value="edit_save">
           <input type="hidden" name="edit_idx" value="{{ edit_machine_idx }}">
           <label>장비명(모델명)</label>
@@ -44,17 +52,21 @@
           <input type="text" name="machine_number" value="{{ edit_machine.number }}" required>
           <label>별칭/연식</label>
           <input type="text" name="machine_alias" value="{{ edit_machine.alias }}">
+          {# 수정 취소도 from 유지 #}
+          {% set cancel_base = url_for('manage_machines') %}
           <button type="submit" class="main-btn">수정 저장</button>
-          <a href="{{ url_for('manage_machines') }}" style="margin-top:10px; color:#888; text-align:center;">수정 취소</a>
+          <a href="{{ cancel_base }}{% if request.args.get('from') %}{{ '&' if '?' in cancel_base else '?' }}from={{ request.args.get('from') }}{% endif %}"
+             style="margin-top:10px; color:#888; text-align:center;">수정 취소</a>
       </form>
     {% else %}
       {# 등록 모드 #}
       <form method="POST">
+          <input type="hidden" name="from" value="{{ request.args.get('from','') }}">
           <input type="hidden" name="action" value="add">
           <label>장비명(모델명)</label>
           <input type="text" name="machine_name" required placeholder="예: SL600rf, 25톤 등">
           <label>차량번호</label>
-          <input type="text" name="machine_number" required placeholder="예: 001가1234, 등">
+          <input type="text" name="machine_number" required placeholder="예: 001가1234 등">
           <label>별칭/연식</label>
           <input type="text" name="machine_alias" placeholder="예: 23년식, 제일비싼굴삭기 등">
           <button type="submit" class="main-btn">장비 등록</button>
@@ -68,10 +80,13 @@
         <li {% if edit_machine and m.number == edit_machine.number %}class="edit-highlight"{% endif %}>
             <b>{{ m.name }}</b> / {{ m.number }}{% if m.alias %} / {{ m.alias }}{% endif %}
             <span class="actions">
-                <!-- 수정 버튼 -->
-                <a href="{{ url_for('manage_machines', edit=loop.index0) }}" class="edit">[수정]</a>
+                {# 수정 링크에도 from 유지 #}
+                {% set edit_base = url_for('manage_machines', edit=loop.index0) %}
+                <a href="{{ edit_base }}{% if request.args.get('from') %}{{ '&' if '?' in edit_base else '?' }}from={{ request.args.get('from') }}{% endif %}"
+                   class="edit">[수정]</a>
                 <!-- 삭제 버튼 -->
                 <form method="POST" style="display:inline;">
+                    <input type="hidden" name="from" value="{{ request.args.get('from','') }}">
                     <input type="hidden" name="action" value="delete">
                     <input type="hidden" name="machine_number" value="{{ m.number }}">
                     <button type="submit" class="delete" onclick="return confirm('정말 삭제할까요?');">[삭제]</button>

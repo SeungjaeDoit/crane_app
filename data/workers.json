@@ -13,6 +13,33 @@
       "phone": "01030447135",
       "role": "worker",
       "status": "active"
+    },
+    {
+      "username": "홍예크레인백서현",
+      "name": "백서현",
+      "phone": "01019195949",
+      "role": "worker",
+      "status": "active"
+    },
+    {
+      "username": "홍예크레인이케이",
+      "name": "이케이",
+      "phone": "01033332222",
+      "role": "worker",
+      "status": "active"
     }
-  ]
+  ],
+  "케이중기": [],
+  "쓰레기회사": [],
+  "regitest01": [
+    {
+      "username": "regitest01123",
+      "name": "123",
+      "phone": "3333333333",
+      "role": "worker",
+      "status": "active"
+    }
+  ],
+  "rtest01": [],
+  "rtest02": []
 }

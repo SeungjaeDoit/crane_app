@@ -1,72 +1,65 @@
+<!-- templates/dashboard.html (사장님 대시보드) -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8" />
-    <title>대시보드</title>
-    <style>
-        body {
-            font-family: '맑은 고딕', Malgun Gothic, 돋움, Dotum, sans-serif;
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 20px 30px;
-            background-color: #f8f9fa;
-            border-radius: 12px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-        }
-        h2 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-        }
-        ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        ul li {
-            margin: 0;
-        }
-        a {
-            display: block;
-            padding: 12px;
-            border-radius: 6px;
-            font-weight: 600;
-            text-align: center;
-            text-decoration: none;
-            color: #fff;
-            background-color: #007bff;
-            transition: background-color 0.3s ease;
-            cursor: pointer;
-        }
-        a:hover {
-            background-color: #0056b3;
-        }
-        hr {
-            margin: 40px 0;
-            border: none;
-            border-top: 1px solid #ccc;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>대시보드</title>
+  <style>
+    :root{
+      --radius:14px; --shadow:0 8px 24px rgba(0,0,0,.08);
+    }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'맑은 고딕',sans-serif; background:#f6f7fb; }
+    .wrap{max-width:760px; margin:36px auto; padding:28px; background:#fff; border-radius:18px; box-shadow:0 10px 30px rgba(0,0,0,.06);}
+    h1{margin:0 0 18px; text-align:center; font-size:26px;}
+    .grid{display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;}
+    .tile{
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      padding:16px 14px; border-radius:var(--radius); text-decoration:none;
+      font-weight:800; letter-spacing:.2px; box-shadow:var(--shadow); transition:.15s ease;
+      color:#fff; user-select:none;
+    }
+    .tile:hover{transform:translateY(-1px); filter:saturate(1.05);}
+    .tile.big{padding:18px 16px; font-size:17px;}
+    .tile.full{grid-column:1 / -1;}
+    .divider{height:1px; background:#e5e7eb; margin:16px 0;}
+    /* 색상 버전들 */
+    .t-indigo{background:#4338ca;}   .t-indigo:hover{background:#3730a3;}
+    .t-sky{background:#0ea5e9;}      .t-sky:hover{background:#0284c7;}
+    .t-purple{background:#7c3aed;}   .t-purple:hover{background:#6d28d9;}
+    .t-amber{background:#f59e0b; color:#111827;} .t-amber:hover{background:#d97706; color:#111827;}
+    .t-red{background:#ef4444;}      .t-red:hover{background:#dc2626;}
+    .t-teal{background:#14b8a6;}     .t-teal:hover{background:#0d9488;}
+    .t-slate{background:#334155;}    .t-slate:hover{background:#1f2937;}
+    .t-gray{background:#9ca3af;}     .t-gray:hover{background:#6b7280;}
+    .icon{font-size:18px;}
+    @media (max-width:640px){
+      .wrap{margin:18px 10px; padding:20px;}
+      .grid{grid-template-columns:1fr; gap:10px;}
+      .tile.big{font-size:16px;}
+    }
+  </style>
 </head>
 <body>
-    <h2>{{ company }} 사장님, 반갑습니다!</h2>
+  <div class="wrap">
+    <h1>{{ company_name or '' }} 사장님, 반갑습니다!</h1>
 
-    {% if role == 'boss' %}
-        <ul>
-            <li><a href="{{ url_for('add_worker') }}">➕ 기사 등록</a></li>
-            <li><a href="{{ url_for('manage_workers') }}">👷‍♂️ 기사 관리</a></li>
-            <li><a href="{{ url_for('add_machine') }}">➕ 장비 등록/관리</a></li>
-            <li><a href="{{ url_for('add_job') }}">📝 작업지시 등록</a></li>
-             <li><a href="{{ url_for('view_jobs') }}">📋 작업 목록 보기</a></li>
-            <li><a href="{{ url_for('company_info') }}">🏢 회사정보 보기/수정</a></li>
-        </ul>
-    {% endif %}
+    <div class="grid">
 
-    <hr>
-    <!-- 로그아웃 링크를 하드코딩이 아닌 url_for 로 변경했습니다 -->
-    <a href="{{ url_for('logout') }}">🚪 로그아웃</a>
+      <a class="tile t-red big" href="{{ url_for('add_job') }}"><span class="icon">📝</span>작업지시 등록</a>
+      <a class="tile t-teal big" href="{{ url_for('view_jobs') }}"><span class="icon">📋</span>작업 목록 보기</a>
+
+      <a class="tile t-indigo" href="{{ url_for('add_worker') }}"><span class="icon">➕</span>기사 등록/관리</a>
+      <a class="tile t-sky" href="{{ url_for('manage_workers') }}"><span class="icon">👷</span>기사 관리</a>
+
+      <a class="tile t-purple" href="{{ url_for('manage_machines') }}"><span class="icon">🛠️</span>장비 등록/관리</a>
+      <a class="tile t-amber" href="{{ url_for('manage_clients') }}"><span class="icon">🧾</span>거래처 관리</a>
+
+      <a class="tile t-slate full" href="{{ url_for('company_info') }}"><span class="icon">🏢</span>회사정보 보기/수정</a>
+    </div>
+
+    <div class="divider"></div>
+
+    <a class="tile t-gray full" href="{{ url_for('logout') }}"><span class="icon">📕</span>로그아웃</a>
+  </div>
 </body>
 </html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>거래처 관리</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'맑은 고딕',sans-serif;max-width:720px;margin:36px auto;padding:20px;background:#fafafa}
+    h2{margin:0 0 18px;text-align:center}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 18px;margin:14px 0}
+    label{font-weight:700;display:block;margin-top:12px}
+    input[type="text"]{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-top:6px}
+    .row{display:flex;gap:10px;margin-top:12px}
+    .row .grow{flex:1}
+    .btn{border:none;border-radius:8px;padding:10px 14px;font-size:14px;cursor:pointer}
+    .btn-green{background:#22c55e;color:#fff}
+    .btn-red{background:#ef4444;color:#fff}
+    .btn-ghost{background:#eef2f7;color:#334155}
+    .hint{color:#6b7280;font-size:12px;margin-top:6px}
+    .list{margin-top:10px;color:#374151;font-size:13px}
+    .chip{display:inline-block;margin:4px 6px 0 0;padding:3px 8px;border-radius:9999px;background:#f3f4f6}
+  </style>
+</head>
+<body>
+  <h2>거래처 관리 (원수급자 / 임차인)</h2>
+
+  {% if request.args.get('from') == 'add_job' %}
+    <p>
+      <a href="{{ url_for('add_job') }}"
+         style="display:inline-block;margin:8px 0;padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;text-decoration:none;">
+        ← 작업 등록으로 돌아가기
+      </a>
+    </p>
+  {% endif %}
+
+  <!-- 원수급자 -->
+  <div class="card">
+    <h3 style="margin:0 0 8px;">발주자(원수급자)</h3>
+
+    <label for="owner_input">회사명 입력 또는 검색</label>
+    <input type="text" id="owner_input" list="owner_list" placeholder="예: 홍예…" />
+    <datalist id="owner_list">
+      {% for c in owners %}
+        <option value="{{ c }}"></option>
+      {% endfor %}
+    </datalist>
+
+    <div class="row">
+      <button class="btn btn-green" type="button" onclick="saveOwner()">저장</button>
+      <button class="btn btn-red"   type="button" onclick="deleteOwner()">삭제</button>
+      <button class="btn btn-ghost" type="button" onclick="document.getElementById('owner_input').value=''">지우기</button>
+    </div>
+    <div class="hint">입력값이 없으면 저장/삭제가 진행되지 않습니다. 이미 비슷한 이름이 있을 경우 저장 전에 합칠지 물어봅니다.</div>
+
+    <div class="list">
+      {% for c in owners %}
+        <span class="chip">{{ c }}</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- 임차인 -->
+  <div class="card">
+    <h3 style="margin:0 0 8px;">건설업자(임차인)</h3>
+
+    <label for="tenant_input">회사명 입력 또는 검색</label>
+    <input type="text" id="tenant_input" list="tenant_list" placeholder="예: 가나다…" />
+    <datalist id="tenant_list">
+      {% for t in tenants %}
+        <option value="{{ t }}"></option>
+      {% endfor %}
+    </datalist>
+
+    <div class="row">
+      <button class="btn btn-green" type="button" onclick="saveTenant()">저장</button>
+      <button class="btn btn-red"   type="button" onclick="deleteTenant()">삭제</button>
+      <button class="btn btn-ghost" type="button" onclick="document.getElementById('tenant_input').value=''">지우기</button>
+    </div>
+    <div class="hint">입력값이 없으면 저장/삭제가 진행되지 않습니다.</div>
+
+    <div class="list">
+      {% for t in tenants %}
+        <span class="chip">{{ t }}</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- 대시보드로 -->
+  <div style="text-align:center;margin-top:18px;">
+    <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">🏠 대시보드</a>
+  </div>
+
+  <!-- 숨김 폼: 라우트가 기대하는 필드명으로 전송 -->
+  <form id="clientForm" method="post" action="{{ url_for('manage_clients') }}" style="display:none;">
+    <input type="hidden" name="from" value="{{ request.args.get('from','') }}">
+    <input type="hidden" name="kind"   id="f_kind">   <!-- 'primary' | 'tenant' -->
+    <input type="hidden" name="action" id="f_action"> <!-- 'add' | 'delete' -->
+    <input type="hidden" name="name"   id="f_name">
+    <input type="hidden" name="idx"    id="f_idx">
+  </form>
+
+  <script>
+    // 서버 목록
+    const OWNERS  = {{ owners  | tojson }};
+    const TENANTS = {{ tenants | tojson }};
+
+    // 느슨한 비교용 정규화
+    const normalize = s => (s||'')
+      .toLowerCase()
+      .replace(/\s+/g,'')
+      .replace(/[()]/g,'')
+      .replace(/㈜|\(주\)|주식회사/g,'')
+      .replace(/크레인|중기|건설|기계|장비/g,'');
+
+    function findCanonical(name, list){
+      const n = normalize(name);
+      if(!n) return null;
+      for(const item of list){
+        const m = normalize(item);
+        if(m.includes(n) || n.includes(m)) return item;
+      }
+      return null;
+    }
+
+    // 숨김 폼 채워서 제출 (라우트 형식에 맞춤)
+    function submitClients(payload){
+      const f = document.getElementById('clientForm');
+      f.querySelector('#f_kind').value   = payload.kind   || '';
+      f.querySelector('#f_action').value = payload.action || '';
+      f.querySelector('#f_name').value   = payload.name   || '';
+      f.querySelector('#f_idx').value    = payload.idx    ?? '';
+      f.submit();
+    }
+
+    // ===== 원수급자 저장/삭제 =====
+    function saveOwner(){
+      const input = document.getElementById('owner_input');
+      let v = (input.value || '').trim();
+      if(!v){ alert('회사명을 입력하세요.'); return; }
+
+      const hit = findCanonical(v, OWNERS);
+      if(hit && hit !== v){
+        if(confirm(`이미 "${hit}" 로 저장된 회사가 있습니다.\n같은 회사로 저장하시겠습니까?`)){
+          v = hit;
+        }
+      }
+      submitClients({ kind:'primary', action:'add', name:v });
+    }
+    function deleteOwner(){
+      const v = (document.getElementById('owner_input').value || '').trim();
+      if(!v){ alert('삭제할 회사명을 입력하세요.'); return; }
+      const hit = findCanonical(v, OWNERS);
+      const idx = hit ? OWNERS.indexOf(hit) : -1;
+      if(idx < 0){ alert('목록에서 찾을 수 없습니다. 정확한 이름을 선택/입력해 주세요.'); return; }
+      if(!confirm(`"${hit}" 항목을 삭제할까요?`)) return;
+      submitClients({ kind:'primary', action:'delete', idx: idx, name: hit });
+    }
+
+    // ===== 임차인 저장/삭제 =====
+    function saveTenant(){
+      const input = document.getElementById('tenant_input');
+      let v = (input.value || '').trim();
+      if(!v){ alert('회사명을 입력하세요.'); return; }
+
+      const hit = findCanonical(v, TENANTS);
+      if(hit && hit !== v){
+        if(confirm(`이미 "${hit}" 로 저장된 회사가 있습니다.\n같은 회사로 저장하시겠습니까?`)){
+          v = hit;
+        }
+      }
+      submitClients({ kind:'tenant', action:'add', name:v });
+    }
+    function deleteTenant(){
+      const v = (document.getElementById('tenant_input').value || '').trim();
+      if(!v){ alert('삭제할 회사명을 입력하세요.'); return; }
+      const hit = findCanonical(v, TENANTS);
+      const idx = hit ? TENANTS.indexOf(hit) : -1;
+      if(idx < 0){ alert('목록에서 찾을 수 없습니다. 정확한 이름을 선택/입력해 주세요.'); return; }
+      if(!confirm(`"${hit}" 항목을 삭제할까요?`)) return;
+      submitClients({ kind:'tenant', action:'delete', idx: idx, name: hit });
+    }
+  </script>
+</body>
+</html>

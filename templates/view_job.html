@@ -8,25 +8,42 @@
       --gap:12px; --radius:10px; --border:#e5e7eb; --bg:#f7f7f9; --muted:#6b7280;
       --blue:#1e90ff; --green:#22c55e; --red:#ef4444;
     }
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'맑은 고딕',sans-serif; max-width:1080px; margin:36px auto; padding:0 16px; background:#fafafa;}
+    body{
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,'맑은 고딕',sans-serif;
+      max-width:clamp(980px, 92vw, 1280px);
+      margin:36px auto; padding:0 16px; background:#fafafa;
+    }
     h2{font-size:26px; font-weight:800; text-align:center; margin:0 0 18px;}
 
-    .toolbar{display:flex; flex-wrap:wrap; align-items:center; gap:var(--gap); justify-content:center; margin-bottom:8px;}
-    .toolbar input{padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; min-width:210px; background:#fff;}
     .btn{display:inline-flex; align-items:center; gap:6px; border:none; border-radius:8px; padding:10px 14px; font-size:14px; cursor:pointer; text-decoration:none;}
     .btn-blue{background:var(--blue); color:#fff;}
     .btn-ghost{background:#eef2f7; color:#334155;}
     .btn-green{background:var(--green); color:#fff;}
     .btn-red{background:var(--red); color:#fff;}
-    .chip{background:#9ca3af; color:#fff;} .chip.on{background:#f59e0b;}
+    a.btn.chip{ background:#9ca3af; color:#fff; }
+    a.btn.chip.on{ background:#f59e0b; color:#fff; }
 
-    .calendar-wrap{display:flex; justify-content:center; margin: 10px 0 16px;}
+    /* ── 상단 검색: 가로 한 줄 ── */
+    .filters-row{
+      display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;
+      margin:8px 0 12px;
+    }
+    .filters-row input[type="text"],
+    .filters-row input[type="date"]{
+      height:36px; padding:0 12px; border:1px solid var(--border); border-radius:8px;
+      background:#fff; min-width:200px; font-size:14px;
+    }
+    .filters-row .btn{ height:36px; padding:0 14px; }
+
+    /* 토글 버튼 줄 */
+    .calendar-wrap{ display:flex; justify-content:center; gap:10px; margin:10px 0 16px; }
+
+    /* 표/상세 */
     .bulk{display:flex; gap:10px; align-items:center; margin: 6px 0 14px;}
     .hint{color:var(--muted); font-size:13px;}
-
-    .table-wrap{background:#fff; border-radius:var(--radius); border:1px solid var(--border); overflow:hidden;}
-    table{width:100%; border-collapse:collapse; table-layout:fixed;}
-    th,td{padding:14px 12px; text-align:center; border-bottom:1px solid var(--border);}
+    .table-wrap{background:#fff; border-radius:var(--radius); border:1px solid var(--border); overflow-x:auto;}
+    table{width:100%; border-collapse:collapse; table-layout:fixed; min-width:960px;}
+    th,td{padding:clamp(8px, 1.2vw, 14px) 10px; text-align:center; border-bottom:1px solid var(--border);}
     th{background:#f3f4f6; font-weight:700;}
     tr:hover td{background:#fbfcff;}
     .arrow{padding:8px 10px; border:1px solid var(--border); background:#fff; border-radius:8px; cursor:pointer;}
@@ -37,34 +54,222 @@
     .detail{background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:14px; margin:8px; display:grid; grid-template-columns:1fr 1fr; gap:10px 18px; text-align:left;}
     .detail-actions{grid-column:1 / -1; display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;}
 
+    /* 기사/칩 */
+    .worker-name{display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+    .spare-badge{display:inline-block; margin-top:4px; padding:1px 6px; border-radius:8px; background:#e8f1ff; color:#1d4ed8; font-size:12px; font-weight:600;}
+    .price-chip,.badge-partial,.badge-unpaid{display:inline-block; margin-left:6px; padding:2px 6px; border-radius:8px; font-size:12px; vertical-align:middle;}
+    .price-missing{display:inline-block; margin-left:6px; padding:2px 6px; border-radius:8px; background:#fff1f2; color:#b91c1c; font-size:12px; vertical-align:middle;}
+    .badge-partial{ background:#fff7ed; color:#c2410c; }
+    .badge-unpaid { background:#fee2e2; color:#b91c1c; }
+    .tag-blue{display:inline-block; padding:2px 6px; border-radius:8px; background:#e6f0ff; color:#1d4ed8; font-size:12px; margin-left:6px;}
+    .tag-purple{display:inline-block; padding:2px 6px; border-radius:8px; background:#ede9fe; color:#6d28d9; font-size:12px; margin-left:6px;}
     .ellipsis{display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
     .copy-link{font-size:12px; text-decoration:underline; cursor:pointer; color:#2563eb;}
-    .price-chip{display:inline-block; margin-left:6px; padding:2px 6px; border-radius:8px; background:#eef2f7; font-size:12px; vertical-align:middle;}
-    .price-missing{display:inline-block; margin-left:6px; padding:2px 6px; border-radius:8px; background:#fff1f2; color:#b91c1c; font-size:12px; vertical-align:middle;}
 
-    @media (max-width:720px){ .detail{grid-template-columns:1fr;} .toolbar input{min-width:140px;} }
+    .pay-chips{display:flex; gap:6px; flex-wrap:wrap; justify-content:center;}
+    .pay-actions{margin-top:6px; display:flex; gap:6px; justify-content:center; flex-wrap:wrap;}
+
+    @media (max-width:1200px){
+      .btn{padding:8px 12px; font-size:13px;}
+      .price-chip,.price-missing,.tag-blue,.badge-partial,.badge-unpaid{font-size:11px; padding:1px 5px;}
+    }
+    @media (max-width:980px){
+      .detail{grid-template-columns:1fr;}
+    }
   </style>
 </head>
+
+<script>
+"use strict";
+
+document.addEventListener('DOMContentLoaded', () => {
+  const selectAll = document.getElementById('selectAll');
+  if (selectAll) {
+    selectAll.addEventListener('change', function(){
+      document.querySelectorAll('input[name="selected_jobs"]').forEach(cb => cb.checked = this.checked);
+    });
+  }
+
+  document.body.addEventListener('click', (e) => {
+    const btn = e.target.closest('.arrow');
+    if (!btn) return;
+    const id = btn.dataset.target;
+    const row = document.getElementById(id);
+    if (!row) return;
+    const open = row.style.display === 'table-row';
+    row.style.display = open ? 'none' : 'table-row';
+    btn.textContent = open ? '▼' : '▲';
+  });
+});
+
+function setPStatusBadge(el, status){
+  if(!el) return;
+  el.classList.remove('price-chip','price-missing','badge-partial','badge-unpaid');
+  if(status === '부분') el.classList.add('badge-partial');
+  else if(status === '미납') el.classList.add('badge-unpaid');
+  else if(status === '미설정') el.classList.add('price-missing');
+  else el.classList.add('price-chip');
+}
+
+function setBulk(action){
+  if (action === 'delete' && !confirm('선택한 작업을 삭제하시겠습니까?')) return;
+  document.getElementById('bulkAction').value = action;
+  document.getElementById('bulkForm').submit();
+}
+
+function copyToClipboard(text){
+  navigator.clipboard.writeText(text)
+    .then(()=>{ alert('복사되었습니다: ' + text); })
+    .catch(()=>{ alert('복사에 실패했습니다.'); });
+}
+
+async function toggleStatus(btn){
+  const idx = btn.dataset.index;
+  const url = btn.dataset.url;
+  try{
+    const res = await fetch(url, { method:'POST', headers:{ 'X-Requested-With':'XMLHttpRequest', 'Accept':'application/json' }, credentials:'same-origin' });
+    if (res.redirected){ alert('로그인이 필요합니다.'); location.href = res.url; return; }
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')){ alert('요청 처리 중 오류가 발생했습니다.'); return; }
+    const data = await res.json();
+    if (!res.ok || !data?.success){ alert('변경 실패: ' + (data?.error || res.status)); return; }
+
+    const cell = document.getElementById('status-'+idx);
+    if(cell){
+      cell.textContent = data.status || '';
+      cell.classList.toggle('done', data.status === '완료');
+      cell.classList.toggle('todo', data.status !== '완료');
+    }
+    document.querySelectorAll(`button.status-toggle[data-index="${idx}"]`).forEach(b=>{
+      b.textContent = (data.status === '완료') ? '완료취소' : '완료';
+    });
+  }catch(err){ console.error(err); alert('네트워크 오류'); }
+}
+
+async function toggleFullPaid(btn, makeFull){
+  const idx = btn.dataset.index;
+  const url = btn.dataset.url;
+  try{
+    const res = await fetch(url, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
+      credentials:'same-origin',
+      body: JSON.stringify({ action: makeFull ? 'full' : 'unpay' })
+    });
+    if (res.redirected){ alert('로그인이 필요합니다.'); location.href = res.url; return; }
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')){ alert('요청 처리 중 오류가 발생했습니다.'); return; }
+    const data = await res.json();
+    if (!res.ok || !data?.success){ alert('지불 상태 변경 실패: ' + (data?.error || res.status)); return; }
+    applyPaymentUI(idx, data);
+  }catch(e){ console.error(e); alert('네트워크 오류'); }
+}
+
+async function partialPaid(btn){
+  const idx = btn.dataset.index;
+  const url = btn.dataset.url;
+  const val = prompt('부분 완납 금액(만원) 입력');
+  if (val === null) return;
+  const n = parseInt(val, 10);
+  if (isNaN(n) || n < 0){ alert('숫자를 입력해 주세요.'); return; }
+  try{
+    const res = await fetch(url, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
+      credentials:'same-origin',
+      body: JSON.stringify({ action:'partial', amount_man:n })
+    });
+    if (res.redirected){ alert('로그인이 필요합니다.'); location.href = res.url; return; }
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')){ alert('요청 처리 중 오류가 발생했습니다.'); return; }
+    const data = await res.json();
+    if (!res.ok || !data?.success){ alert('부분완납 실패: ' + (data?.error || res.status)); return; }
+    applyPaymentUI(idx, data);
+  }catch(e){ console.error(e); alert('네트워크 오류'); }
+}
+
+function applyPaymentUI(idx, data){
+  const pstatusEl = document.getElementById('pstatus-'+idx);
+  const remainEl  = document.getElementById('remain-'+idx);
+  if(pstatusEl){ pstatusEl.textContent = data.payment_status || ''; setPStatusBadge(pstatusEl, data.payment_status || ''); }
+  if(remainEl){  remainEl.textContent  = '잔액 ' + ((data.remaining ?? 0)) + '만'; }
+
+  const cell = document.getElementById('paycell-'+idx);
+  if(!cell) return;
+  const btns = cell.querySelectorAll('button');
+  btns.forEach(b=>{
+    if(b.textContent.includes('부분')) return;
+    if(data.payment_status === '완납'){
+      b.classList.remove('btn-green'); b.classList.add('btn-red');
+      b.textContent = '완납취소';
+      b.setAttribute('onclick','toggleFullPaid(this,false)');
+    }else{
+      b.classList.remove('btn-red'); b.classList.add('btn-green');
+      b.textContent = '완납';
+      b.setAttribute('onclick','toggleFullPaid(this,true)');
+    }
+  });
+}
+</script>
+
 <body>
   <h2>전체 작업 목록</h2>
 
-  <!-- 검색/필터 -->
-  <form class="toolbar" method="get" action="{{ url_for('view_jobs') }}">
-    <input type="text"  name="worker" placeholder="기사명"  value="{{ request.args.get('worker','') }}">
-    <input type="text"  name="client" placeholder="거래처" value="{{ request.args.get('client','') }}">
-    <input type="date"  name="date"   value="{{ request.args.get('date','') }}">
+  <!-- 검색/필터: 가로 한 줄 -->
+  <form method="get" class="filters-row">
+    <input type="text" name="worker" placeholder="기사명"
+           value="{{ request.args.get('worker','') }}" aria-label="기사명">
+
+    <input list="owners_datalist" type="text" name="owner" placeholder="원수급자"
+           value="{{ q_owner or request.args.get('owner','') }}" aria-label="원수급자">
+    <datalist id="owners_datalist">
+      {% for o in owners %}<option value="{{ o }}"></option>{% endfor %}
+    </datalist>
+
+    <input list="tenants_datalist" type="text" name="tenant" placeholder="임차인"
+           value="{{ q_tenant or request.args.get('tenant','') }}" aria-label="임차인">
+    <datalist id="tenants_datalist">
+      {% for t in tenants %}<option value="{{ t }}"></option>{% endfor %}
+    </datalist>
+
+    <input type="date" name="date" value="{{ request.args.get('date','') }}" aria-label="날짜">
+
+    {% if spare  == '1' %}<input type="hidden" name="spare"  value="1">{% endif %}
+    {% if outsrc == '1' %}<input type="hidden" name="outsrc" value="1">{% endif %}
+    {% if overdue== '1' %}<input type="hidden" name="overdue" value="1">{% endif %}
+    {% if dues   == '1' %}<input type="hidden" name="dues"    value="1">{% endif %}
+
     <button type="submit" class="btn btn-blue">검색</button>
     <a href="{{ url_for('view_jobs') }}" class="btn btn-ghost">초기화</a>
-    {% if overdue == '1' %}
-      <a href="{{ overdue_off_url }}" class="btn chip on">전체보기</a>
-    {% else %}
-      <a href="{{ overdue_on_url }}" class="btn chip">미수작업만</a>
-    {% endif %}
   </form>
 
-  <!-- 캘린더 -->
+  <!-- 캘린더 & 토글 버튼 -->
   <div class="calendar-wrap">
     <a href="{{ url_for('calendar_view') }}" class="btn btn-green">📅 캘린더 보기</a>
+
+    {% if overdue == '1' %}
+      <a href="{{ overdue_off_url }}" class="btn btn-blue">이전으로</a>
+    {% else %}
+      <a href="{{ overdue_on_url }}" class="btn btn-blue">진행중인 작업만</a>
+    {% endif %}
+
+    {% if dues == '1' %}
+      <a href="{{ dues_off_url }}" class="btn btn-red">이전으로</a>
+    {% else %}
+      <a href="{{ dues_on_url }}" class="btn btn-red">미납된 작업보기</a>
+    {% endif %}
+
+    {% if spare == '1' %}
+      <a href="{{ spare_off_url }}" class="btn chip on">이전으로</a>
+    {% else %}
+      <a href="{{ spare_on_url }}" class="btn chip">스페어만</a>
+    {% endif %}
+
+    {% if outsrc == '1' %}
+      <a href="{{ outsrc_off_url }}" class="btn chip on">이전으로</a>
+    {% else %}
+      <a href="{{ outsrc_on_url }}" class="btn chip">외주작업만</a>
+    {% endif %}
   </div>
 
   <!-- 일괄 처리 -->
@@ -80,13 +285,13 @@
       {% if jobs and jobs|length>0 %}
       <table>
         <colgroup>
-          <col style="width:48px;">   <!-- 체크 -->
-          <col style="width:110px;">  <!-- 날짜 -->
-          <col style="width:140px;">  <!-- 기사 -->
-          <col style="width:210px;">  <!-- 장비 -->
-          <col style="width:200px;">  <!-- 거래처(+금액) -->
-          <col style="width:100px;">  <!-- 상태 -->
-          <col style="width:220px;">  <!-- 관리 -->
+          <col style="width:4%;">
+          <col style="width:11%;">
+          <col style="width:12%;">
+          <col style="width:21%;">
+          <col style="width:22%;">
+          <col style="width:18%;">
+          <col style="width:12%;">
         </colgroup>
         <thead>
           <tr>
@@ -95,7 +300,7 @@
             <th>기사</th>
             <th>장비(명/차량번호)</th>
             <th>거래처 / 금액</th>
-            <th>상태</th>
+            <th>지불 상태</th>
             <th>관리</th>
           </tr>
         </thead>
@@ -109,25 +314,94 @@
           <tr>
             <td><input type="checkbox" name="selected_jobs" value="{{ job._idx }}"></td>
             <td>{{ job.date }}</td>
-            <td><span class="ellipsis" title="{{ job.worker }}">{{ job.worker }}</span></td>
+
+            <td>
+              {% set w = job.worker or '-' %}
+              <span class="worker-name" title="{{ w }}">{{ w }}</span>
+              {% if job.is_spare %}<span class="spare-badge">(스페어)</span>{% endif %}
+            </td>
+
             <td>
               <span class="ellipsis" title="{{ (mname or '-') ~ ((' / ' ~ mnum) if mnum else '') }}">
                 {{ mname or '-' }}{% if mnum %} / {{ mnum }}{% endif %}
               </span>
             </td>
+
             <td>
-              {% set client = job.client or '-' %}
-              <span class="ellipsis" title="{{ client }}">{{ client }}</span>
+              {% set owner  = job.client_primary or job.client or '-' %}
+              {% set tenant = job.client_tenant or '' %}
+
+              {% if tenant and tenant != owner %}
+                <span class="ellipsis" title="{{ owner }} / {{ tenant }}">{{ owner }} / {{ tenant }}</span>
+              {% else %}
+                <span class="ellipsis" title="{{ owner }}">{{ owner }}</span>
+              {% endif %}
+
               {% if amt > 0 %}
                 <span class="price-chip" title="{{ amt }}만">₩{{ amt }}만</span>
               {% else %}
                 <span class="price-missing">금액설정 X</span>
               {% endif %}
+
+              {% set ot = job.outsource_type or 'none' %}
+              {% if ot != 'none' %}
+                {% set tagclass = 'tag-blue' if ot=='received' else 'tag-purple' %}
+                <span class="{{ tagclass }}" title="{{ job.outsource_partner }} ({{ '받음' if ot=='received' else '줬음' }})">외주</span>
+              {% endif %}
             </td>
-            <td id="status-{{ job._idx }}" class="status {{ 'done' if job.status=='완료' else 'todo' }}">{{ job.status or '진행중' }}</td>
-            <td style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+
+            <td id="paycell-{{ job._idx }}">
+              {% set amount = (job.amount_man if job.amount_man is defined else 0) | int %}
+              {% set paid   = (job.paid_amount_man if job.paid_amount_man is defined else 0) | int %}
+              {% set remaining = amount - paid %}
+              {% set pstatus = job.payment_status
+                                or ('미설정' if amount <= 0
+                                    else ('완납' if paid >= amount
+                                          else ('미납' if paid <= 0 else '부분'))) %}
+              <div class="pay-chips">
+                {% if amount > 0 %}
+                  <span class="price-chip">총 ₩{{ amount }}만</span>
+                  <span class="price-chip" id="remain-{{ job._idx }}">잔액 {{ remaining if remaining>0 else 0 }}만</span>
+
+                  {% set pclass = 'price-chip' %}
+                  {% if pstatus == '부분' %}{% set pclass = 'badge-partial' %}
+                  {% elif pstatus == '미납' %}{% set pclass = 'badge-unpaid' %}
+                  {% elif pstatus == '미설정' %}{% set pclass = 'price-missing' %}{% endif %}
+                  <span class="{{ pclass }}" id="pstatus-{{ job._idx }}">{{ pstatus }}</span>
+                {% else %}
+                  <span class="price-missing" id="pstatus-{{ job._idx }}">금액 미설정</span>
+                {% endif %}
+              </div>
+
+              {% if amount > 0 %}
+              <div class="pay-actions">
+                {% if pstatus == '완납' %}
+                  <button type="button" class="btn btn-red"
+                          data-index="{{ job._idx }}"
+                          data-url="{{ url_for('payment_api', job_index=job._idx) }}"
+                          onclick="toggleFullPaid(this, false)">완납취소</button>
+                {% else %}
+                  <button type="button" class="btn btn-green"
+                          data-index="{{ job._idx }}"
+                          data-url="{{ url_for('payment_api', job_index=job._idx) }}"
+                          onclick="toggleFullPaid(this, true)">완납</button>
+                {% endif %}
+                <button type="button" class="btn btn-ghost"
+                        data-index="{{ job._idx }}"
+                        data-url="{{ url_for('payment_api', job_index=job._idx) }}"
+                        onclick="partialPaid(this)">부분완납</button>
+              </div>
+              {% endif %}
+            </td>
+
+            <td style="display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap;">
+              <span id="status-{{ job._idx }}" class="status {{ 'done' if job.status=='완료' else 'todo' }}">
+                {{ job.status or '진행중' }}
+              </span>
+
               <button type="button" class="arrow" data-target="d-{{ loop.index0 }}">▼</button>
-              <button type="button" class="btn btn-ghost"
+
+              <button type="button" class="btn btn-ghost status-toggle"
                       data-index="{{ job._idx }}"
                       data-url="{{ url_for('toggle_complete_api', job_index=job._idx) }}"
                       onclick="toggleStatus(this)">
@@ -135,6 +409,7 @@
               </button>
             </td>
           </tr>
+
           <tr id="d-{{ loop.index0 }}" class="detail-row">
             <td colspan="7">
               <div class="detail">
@@ -144,12 +419,25 @@
                   {% if malias %} / <span style="color:#6b7280;">{{ malias }}</span>{% endif %}
                   {% if myear  %} / <span style="color:#6b7280;">{{ myear }}</span>{% endif %}
                 </div>
-                <div><b>위치:</b> {{ job.location or '-' }} {% if job.location %}<span class="copy-link" onclick="copyToClipboard(`{{ job.location }}`)">복사</span>{% endif %}</div>
+                <div>
+                  <b>위치:</b>
+                  {{ job.location or '-' }}
+                  {% if job.location %}
+                    <span class="copy-link" onclick="copyToClipboard(`{{ (job.location or '')|replace('`','\\`') }}`)">복사</span>
+                  {% endif %}
+                </div>
                 <div style="grid-column:1 / -1;"><b>요청사항:</b> {{ job.note or '-' }}</div>
+                <div><b>발주/임차:</b> {{ owner }}{% if tenant %} / {{ tenant }}{% endif %}</div>
+                <div><b>외주내역:</b>
+                  {% set ot = job.outsource_type or 'none' %}
+                  {% if ot != 'none' %}
+                    {{ job.outsource_partner or '-' }} ({{ '받음' if ot=='received' else '줬음' }})
+                  {% else %}-{% endif %}
+                </div>
                 <div class="detail-actions">
                   <a href="{{ url_for('edit_job', job_index=job._idx) }}" class="btn btn-blue">수정</a>
                   <a href="{{ url_for('delete_job', job_index=job._idx) }}" class="btn btn-red" onclick="return confirm('삭제하시겠습니까?');">삭제</a>
-                  <button type="button" class="btn btn-green"
+                  <button type="button" class="btn btn-green status-toggle"
                           data-index="{{ job._idx }}"
                           data-url="{{ url_for('toggle_complete_api', job_index=job._idx) }}"
                           onclick="toggleStatus(this)">
@@ -169,51 +457,9 @@
   </form>
 
   <div style="display:flex; justify-content:center; margin:18px 0;">
-    <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">🏠 대시보드로 돌아가기</a>
+    <form action="{{ url_for('dashboard') }}">
+        <button type="submit" style="font-size: 16px;">🏠 메인화면으로 돌아가기</button>
+    </form>
   </div>
-
-  <script>
-    // 전체 선택
-    document.getElementById('selectAll')?.addEventListener('change', function(){
-      document.querySelectorAll('input[name="selected_jobs"]').forEach(cb => cb.checked = this.checked);
-    });
-
-    // 상세 펼침
-    document.querySelectorAll('.arrow').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const id = btn.dataset.target;
-        const row = document.getElementById(id);
-        const open = row.style.display === 'table-row';
-        row.style.display = open ? 'none' : 'table-row';
-        btn.textContent = open ? '▼' : '▲';
-      });
-    });
-
-    // 일괄 처리
-    function setBulk(action){
-      if(action==='delete' && !confirm('선택한 작업을 삭제하시겠습니까?')) return;
-      document.getElementById('bulkAction').value = action;
-      document.getElementById('bulkForm').submit();
-    }
-
-    function copyToClipboard(text){
-      navigator.clipboard.writeText(text).then(()=>{ alert('복사되었습니다: ' + text); });
-    }
-
-    // 상태 토글
-    async function toggleStatus(btn){
-      const idx = btn.dataset.index;
-      const url = btn.dataset.url;
-      try{
-        const res = await fetch(url,{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'},credentials:'same-origin'});
-        if(res.redirected){ alert('로그인이 필요합니다.'); location.href=res.url; return; }
-        const data = await res.json();
-        if(!res.ok||!data?.success){ alert('변경 실패: '+(data?.error||res.status)); return; }
-        const cell=document.getElementById('status-'+idx);
-        if(cell){ cell.textContent=data.status||''; cell.classList.toggle('done',data.status==='완료'); cell.classList.toggle('todo',data.status!=='완료'); }
-        document.querySelectorAll(`button[data-index="${idx}"]`).forEach(b=>{ b.textContent = (data.status==='완료') ? '완료취소' : '완료'; });
-      }catch(err){ alert('네트워크 오류'); }
-    }
-  </script>
 </body>
 </html>

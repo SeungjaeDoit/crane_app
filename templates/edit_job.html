@@ -1,175 +1,344 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>작업 수정</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            max-width: 600px;
-            margin: 40px auto;
-            padding: 20px;
-            background: #f8f8f8;
-            border-radius: 10px;
-        }
-        h2 {
-            text-align: center;
-        }
-        label {
-            font-weight: bold;
-            display: block;
-            margin-top: 20px;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 8px;
-            margin-top: 6px;
-            box-sizing: border-box;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-        }
-        textarea {
-            height: 80px;
-            resize: vertical;
-        }
-        button {
-            margin-top: 25px;
-            width: 100%;
-            padding: 12px;
-            background-color: #4CAF50;
-            color: white;
-            font-size: 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        a {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            color: #555;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .inline-selects {
-            display: flex;
-            gap: 10px;
-        }
-        .inline-selects select {
-            width: 50%;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>작업 수정</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: '맑은 고딕', Malgun Gothic, 돋움, Dotum, sans-serif; max-width: 960px; margin: 30px auto; padding: 16px; background:#f8f9fa; }
+    h2 { margin: 6px 0 18px; }
+    label { display:block; margin-top:14px; font-weight:600; }
+    input[type="text"], input[type="date"], input[type="number"], select, textarea {
+      width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #fff;
+      box-sizing: border-box; margin-top: 6px;
+    }
+    textarea { min-height: 90px; }
+    .inline-selects { display:flex; gap:10px; }
+    .inline-selects select { flex:1; }
+    .inline-worker { display:flex; gap:12px; align-items:center; }
+    .chk-spare { display:flex; align-items:center; gap:6px; margin-top:0; }
+    .row-inline { display:flex; align-items:center; gap:8px; margin:10px 0 0; }
+    .hint { font-size:12px; color:#6b7280; margin-top:6px; }
+    .readonly-like { background:#f3f4f6; }
+    button[type="submit"]{
+      margin-top:18px; width:100%; padding:12px; border:none; border-radius:10px; background:#2563eb; color:#fff; font-size:16px; cursor:pointer;
+    }
+    button[type="submit"]:hover{ background:#1d4ed8; }
+    a.back { display:inline-block; margin-top:14px; color:#374151; text-decoration:none; }
+    .row-head { margin-top:16px; }
+    .inline-option { font-weight:400; margin-left:6px; }
+  </style>
 </head>
 <body>
 
 <h2>작업 수정</h2>
 
 <form method="POST">
-    {% for key, value in request.args.items() %}
-        <input type="hidden" name="filter_{{ key }}" value="{{ value }}">
-    {% endfor %}
+  {# 기존 필터 유지용 히든 #}
+  {% for key, value in request.args.items() %}
+    <input type="hidden" name="filter_{{ key }}" value="{{ value }}">
+  {% endfor %}
 
-    <label for="date">날짜</label>
-    <input type="date" id="date" name="date" value="{{ job.date }}" required>
+  <label for="date">날짜</label>
+  <input type="date" id="date" name="date" value="{{ job.date }}" required>
 
-    <label>시간 선택</label>
-    <div class="inline-selects">
-        <select id="hour" name="hour" required>
-            <option value="">시</option>
-            {% set current_hour = job.time.split(':')[0] if job.time else '' %}
-            {% for h in range(0, 24) %}
-                <option value="{{ '%02d' % h }}" {% if current_hour == '%02d' % h %}selected{% endif %}>{{ '%02d' % h }} 시</option>
-            {% endfor %}
-        </select>
-        <select id="minute" name="minute" required>
-            <option value="">분</option>
-            {% set current_minute = job.time.split(':')[1] if job.time else '' %}
-            {% for m in [0,10,20,30,40,50] %}
-                <option value="{{ '%02d' % m }}" {% if current_minute == '%02d' % m %}selected{% endif %}>{{ '%02d' % m }} 분</option>
-            {% endfor %}
-        </select>
-    </div>
+  {% set current_hour   = (job.time or '')[0:2] %}
+  {% set current_minute = (job.time or '')[3:5] %}
 
-    <label>기사 선택 또는 직접입력</label>
-    <select onchange="document.getElementById('worker_input').value = this.value;">
-        <option value="">선택 안함</option>
-        {% for worker in workers %}
-            <option value="{{ worker.name }}" {% if worker.name == job.worker %}selected{% endif %}>{{ worker.name }}</option>
-        {% endfor %}
+  <label>시간 선택</label>
+  <div class="inline-selects">
+    {% set current_hour = job.time.split(':')[0] if job.time else '' %}
+    {% set current_minute = job.time.split(':')[1] if job.time else '' %}
+    <select id="hour" name="hour" required>
+      <option value="">시</option>
+      {% for h in range(0,24) %}
+        {% set hh = "%02d"|format(h) %}
+        <option value="{{ hh }}" {% if current_hour == hh %}selected{% endif %}>{{ hh }} 시</option>
+      {% endfor %}
     </select>
-    <input type="text" id="worker_input" name="worker" value="{{ job.worker }}" required>
+    <select id="minute" name="minute" required>
+      <option value="">분</option>
+      {% for m in [0,10,20,30,40,50] %}
+        {% set mm = "%02d"|format(m) %}
+        <option value="{{ mm }}" {% if current_minute == mm %}selected{% endif %}>{{ mm }} 분</option>
+      {% endfor %}
+    </select>
+  </div>
 
-    <label>장비 선택 또는 직접입력</label>
-    <select 
-    onchange="
-        var opt = this.options[this.selectedIndex];
-        document.getElementById('machine_name').value = opt.dataset.name || '';
-        document.getElementById('machine_number').value = opt.dataset.number || '';
-        document.getElementById('machine_alias').value = opt.dataset.alias || '';
-    ">
+  <label>기사 선택 또는 직접입력</label>
+  <select onchange="document.getElementById('worker_input').value=this.value;">
+    <option value="">선택 안함</option>
+    {% for worker in workers %}
+      <option value="{{ worker.name }}" {% if worker.name == job.worker %}selected{% endif %}>{{ worker.name }}</option>
+    {% endfor %}
+  </select>
+  <div class="inline-worker">
+    <input type="text" id="worker_input" name="worker" value="{{ job.worker }}" placeholder="기사명 입력 또는 선택값 유지" required>
+    <label class="chk-spare">
+      <input type="checkbox" name="is_spare" value="1" {% if job.is_spare %}checked{% endif %}> 스페어
+    </label>
+  </div>
+
+  <label>장비 선택 또는 직접입력</label>
+  <select onchange="
+    var o=this.options[this.selectedIndex];
+    document.getElementById('machine_name').value=o.dataset.name||'';
+    document.getElementById('machine_number').value=o.dataset.number||'';
+    document.getElementById('machine_alias').value=o.dataset.alias||'';
+  ">
     <option value="">선택 안함</option>
     {% for m in machines %}
-        <option 
-        data-name="{{ m.name }}" 
-        data-number="{{ m.number }}" 
+      <option
+        data-name="{{ m.name }}"
+        data-number="{{ m.number }}"
         data-alias="{{ m.alias }}">
         {{ m.name }} / {{ m.number }}{% if m.alias %} / {{ m.alias }}{% endif %}
-        </option>
+      </option>
     {% endfor %}
-    </select>
-    <input type="text" id="machine_name" name="machine_name" value="{{ job.machine_name or '' }}" placeholder="장비명" required>
-    <input type="text" id="machine_number" name="machine_number" value="{{ job.machine_number or '' }}" placeholder="차량번호" required>
-    <input type="text" id="machine_alias" name="machine_alias" value="{{ job.machine_alias or '' }}" placeholder="별칭/연식(선택)">
+  </select>
+  <input type="text" id="machine_name"  name="machine_name"  value="{{ job.machine_name or '' }}" placeholder="장비명" required>
+  <input type="text" id="machine_number" name="machine_number" value="{{ job.machine_number or '' }}" placeholder="차량번호" required>
+  <input type="text" id="machine_alias"  name="machine_alias"  value="{{ job.machine_alias or '' }}" placeholder="별칭/연식(선택)">
 
+  <!-- 원수급자 -->
+  <label class="row-head">발주자(원수급자) 입력 또는 검색</label>
+  <input
+    type="text"
+    id="ownerSearch"
+    name="client_primary"
+    value="{{ job.client_primary if job is defined else (prev.client_primary if prev is defined else '') }}"
+    placeholder="예: 홍예…">
+  <select id="ownerList" size="6" style="width:100%;height:auto;display:none;">
+    {% for o in owners %}
+      <option value="{{ o }}">{{ o }}</option>
+    {% endfor %}
+  </select>
+  <div id="ownerNo" class="hint" style="display:none;">검색 결과가 없습니다.</div>
+  <label class="save-inline" style="display:flex;gap:6px;align-items:center;margin-top:8px;">
+    <input type="checkbox" name="save_owner" value="1"> 내 거래처에 저장
+  </label>
 
-    <label>거래처 선택 또는 직접입력</label>
-    <select onchange="document.getElementById('client_input').value = this.value;">
-        <option value="">선택 안함</option>
-        {% for client in clients %}
-            <option value="{{ client }}" {% if client == job.client %}selected{% endif %}>{{ client }}</option>
-        {% endfor %}
-    </select>
-    <input type="text" id="client_input" name="client" value="{{ job.client }}" required>
+  <!-- 임차인 -->
+  <label class="row-head">
+    건설업자(임차인) 입력 또는 검색
+    <span class="inline-option">
+      <input type="checkbox" id="same_as_owner" name="same_as_owner" value="1"
+             {% if job.client_tenant and job.client_primary and job.client_tenant == job.client_primary %}checked{% endif %}>
+      <small>원수급자와 동일함</small>
+    </span>
+  </label>
+  <input
+    type="text"
+    id="tenantSearch"
+    name="client_tenant"
+    value="{{ job.client_tenant if job is defined else (prev.client_tenant if prev is defined else '') }}"
+    placeholder="예: 가나다…">
+  <select id="tenantList" size="6" style="width:100%;height:auto;display:none;">
+    {% for t in tenants %}
+      <option value="{{ t }}">{{ t }}</option>
+    {% endfor %}
+  </select>
+  <div id="tenantNo" class="hint" style="display:none;">검색 결과가 없습니다.</div>
+  <label class="save-inline" style="display:flex;gap:6px;align-items:center;margin-top:8px;">
+    <input type="checkbox" name="save_tenant" value="1"> 내 거래처에 저장
+  </label>
 
-    <label>작업 위치 선택 또는 직접입력</label>
-    <select onchange="document.getElementById('location_input').value = this.value;">
-        <option value="">선택 안함</option>
-        {% for location in locations %}
-            <option value="{{ location }}" {% if location == job.location %}selected{% endif %}>{{ location }}</option>
-        {% endfor %}
-    </select>
-    <input type="text" id="location_input" name="location" value="{{ job.location }}" required>
-
-    <label>요청사항</label>
-    <textarea name="note">{{ job.note }}</textarea>
-
-    <button type="submit">수정 완료</button>
-</form>
-
-<a href="/jobs">← 작업 목록으로 돌아가기</a>
+<label>작업 위치 선택 또는 직접입력</label>
+<select id="location_select" onchange="document.getElementById('location_input').value=this.value;">
+  <option value="">선택 안함</option>
+  {% for loc in locations %}
+    {% set loc_val = (loc or '')|trim %}
+    <option value="{{ loc_val }}" {% if (job.location or '')|trim == loc_val %}selected{% endif %}>{{ loc_val }}</option>
+  {% endfor %}
+</select>
+<input
+  type="text"
+  id="location_input"
+  name="location"
+  value="{{ (job.location or '')|trim }}"
+  placeholder="예: 수원 ○○현장"
+  required
+>
 
 <script>
-    // 제출 시 시, 분을 합쳐서 time 필드로 전송하는 스크립트
-    document.querySelector('form').addEventListener('submit', function(e) {
-        const hour = document.getElementById('hour').value;
-        const minute = document.getElementById('minute').value;
-        if (!hour || !minute) {
-            alert('시간(시, 분)을 모두 선택해주세요.');
-            e.preventDefault();
-            return false;
+  (function(){
+    const sel = document.getElementById('location_select');
+    const inp = document.getElementById('location_input');
+
+    // 페이지 로드 시, 입력칸 값과 일치하는 옵션이 있으면 자동 선택
+    function syncSelectToInput() {
+      const v = (inp.value || '').trim();
+      let matched = false;
+      for (const opt of sel.options) {
+        if (opt.value.trim() === v && v !== '') {
+          opt.selected = true;
+          matched = true;
+          break;
         }
-        let timeInput = document.createElement('input');
-        timeInput.type = 'hidden';
-        timeInput.name = 'time';
-        timeInput.value = hour + ':' + minute;
-        this.appendChild(timeInput);
-    });
+      }
+      if (!matched) sel.value = ''; // 목록에 없으면 "선택 안함" 유지
+    }
+
+    // 드롭다운 변경 → 입력칸에 복사(이미 onchange에 한 번 연결되어 있어도 안전하게 보강)
+    function syncInputToSelect() {
+      inp.value = sel.value;
+    }
+
+    sel.addEventListener('change', syncInputToSelect);
+
+    // 초기 동기화 (스크립트가 하단에 있으니 즉시 한 번 실행)
+    syncSelectToInput();
+  })();
+</script>
+
+  <label for="duration_type">작업 기간</label>
+  {% set dtyp = job.duration_type or '하루' %}
+  <select id="duration_type" name="duration_type">
+    <option value="하루"   {% if dtyp=='하루' %}selected{% endif %}>하루</option>
+    <option value="반나절" {% if dtyp=='반나절' %}selected{% endif %}>반나절</option>
+    <option value="N시간"  {% if dtyp=='N시간' %}selected{% endif %}>N시간</option>
+  </select>
+
+  {% set dh = (job.duration_hours|string) if job.duration_hours else '' %}
+  <select id="duration_hours" name="duration_hours" style="display:none;margin-top:8px;">
+    {% for n in range(1,25) %}
+      <option value="{{n}}" {% if dh==(n|string) %}selected{% endif %}>{{n}}</option>
+    {% endfor %}
+  </select>
+  <div class="hint" id="duration_hint" style="display:none;">N시간을 선택하면 시간(1~24)을 선택하세요.</div>
+
+  <label for="amount_man">금액 (만원)</label>
+  <input type="number" id="amount_man" name="amount_man" inputmode="numeric" pattern="\d*" min="0" step="1"
+         placeholder="예: 35 (→ 35만원)" value="{{ (job.amount_man if job.amount_man is defined else 0) }}">
+  <div class="hint">만원 단위로 숫자만 입력하세요. (예: 35 → 35만원)</div>
+
+  <div class="row-inline">
+    <input type="checkbox" id="share_amount" name="share_amount" value="1" {% if job.share_amount %}checked{% endif %}>
+    <label for="share_amount" style="margin-top:0;">금액을 기사에게도 공유</label>
+  </div>
+
+  <label>요청사항</label>
+  <textarea name="note">{{ job.note }}</textarea>
+
+  <label>외주</label>
+  <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+    {% set ot = job.outsource_type if job.outsource_type is defined else 'none' %}
+    <label><input type="radio" name="outsource_type" value="none"     {% if ot=='none' %}checked{% endif %}> 없음</label>
+    <label><input type="radio" name="outsource_type" value="received" {% if ot=='received' %}checked{% endif %}> 받음</label>
+    <label><input type="radio" name="outsource_type" value="given"    {% if ot=='given' %}checked{% endif %}> 줬음</label>
+    <input type="text" name="outsource_partner" value="{{ job.outsource_partner or '' }}" placeholder="외주 업체명 (예: 가나다크레인)" style="flex:1;min-width:220px;">
+  </div>
+
+  <button type="submit">수정 완료</button>
+</form>
+
+<a class="back" href="{{ url_for('view_jobs') }}">← 작업 목록으로 돌아가기</a>
+
+<script>
+  // 제출 시 hh:mm로 합쳐 hidden time 전송 + N시간 검증
+  document.querySelector('form').addEventListener('submit', function(e){
+    const h=document.getElementById('hour').value, m=document.getElementById('minute').value;
+    if(!h||!m){ alert('시간(시, 분)을 모두 선택해주세요.'); e.preventDefault(); return; }
+    const t=document.createElement('input'); t.type='hidden'; t.name='time'; t.value=h+':'+m; this.appendChild(t);
+
+    const dt = document.getElementById('duration_type').value;
+    const dh = document.getElementById('duration_hours');
+    if(dt==='N시간' && !dh.value){
+      alert('N시간을 선택하셨다면 1~24시간 중 하나를 선택해주세요.');
+      e.preventDefault(); return;
+    }
+  });
+
+  // 거래처 검색 유틸
+  const normalize = s => (s||'').toLowerCase().replace(/\s+/g,'').replace(/[()]/g,'')
+                    .replace(/㈜|\(주\)|주식회사/g,'').replace(/크레인|중기|건설|기계|장비/g,'');
+
+  function filterSelect(inputId, listId, emptyId){
+    const q = (document.getElementById(inputId).value||'').trim();
+    const sel = document.getElementById(listId);
+    const no  = document.getElementById(emptyId);
+    if(!sel) return;
+
+    if(!q){
+      sel.style.display='none';
+      if(no) no.style.display='none';
+      return;
+    }
+
+    const nq = normalize(q);
+    let shown=0;
+    for(let i=0;i<sel.options.length;i++){
+      const opt=sel.options[i];
+      const text = opt.text || opt.value;
+      const vis = normalize(text).includes(nq);
+      opt.style.display = vis ? '' : 'none';
+      if(vis) shown++;
+    }
+    sel.style.display = shown>0 ? 'block' : 'none';
+    if(no) no.style.display = shown===0 ? 'block' : 'none';
+  }
+
+  function applySelected(listId, inputId){
+    const sel=document.getElementById(listId), inp=document.getElementById(inputId);
+    if(sel && inp && sel.value){ inp.value = sel.value; }
+    if(sel) sel.style.display='none';
+  }
+
+  function setupPartnerSearch(){
+    const ownerIn = document.getElementById('ownerSearch');
+    const ownerLs = document.getElementById('ownerList');
+    const tenantIn= document.getElementById('tenantSearch');
+    const tenantLs= document.getElementById('tenantList');
+
+    if(ownerLs) ownerLs.style.display='none';
+    if(tenantLs) tenantLs.style.display='none';
+
+    ownerIn?.addEventListener('input', ()=>filterSelect('ownerSearch','ownerList','ownerNo'));
+    tenantIn?.addEventListener('input', ()=>filterSelect('tenantSearch','tenantList','tenantNo'));
+
+    ownerLs?.addEventListener('change', ()=>applySelected('ownerList','ownerSearch'));
+    ownerLs?.addEventListener('dblclick',()=>applySelected('ownerList','ownerSearch'));
+    tenantLs?.addEventListener('change', ()=>applySelected('tenantList','tenantSearch'));
+    tenantLs?.addEventListener('dblclick',()=>applySelected('tenantList','tenantSearch'));
+
+    // 원수급자와 동일함
+    const same = document.getElementById('same_as_owner');
+    if(same){
+      const lock = (on)=>{
+        if(on){
+          tenantIn.value = ownerIn.value || '';
+          tenantIn.readOnly = true;
+          tenantIn.classList.add('readonly-like');
+          if(tenantLs) tenantLs.style.display='none';
+        }else{
+          tenantIn.readOnly = false;
+          tenantIn.classList.remove('readonly-like');
+        }
+      };
+      lock(same.checked);
+      same.addEventListener('change', ()=>lock(same.checked));
+      ownerIn?.addEventListener('input', ()=>{ if(same.checked) tenantIn.value = ownerIn.value; });
+    }
+  }
+
+  // 작업 기간 N시간 토글
+  function setupDuration(){
+    const typeSel = document.getElementById('duration_type');
+    const hoursSel = document.getElementById('duration_hours');
+    const hint = document.getElementById('duration_hint');
+    const toggle = ()=>{
+      const show = (typeSel.value === 'N시간');
+      hoursSel.style.display = show ? '' : 'none';
+      hint.style.display = show ? '' : 'none';
+    };
+    typeSel.addEventListener('change', toggle);
+    toggle(); // 초기실행
+  }
+
+  window.addEventListener('load', ()=>{
+    setupPartnerSearch();
+    setupDuration();
+  });
 </script>
 
 </body>

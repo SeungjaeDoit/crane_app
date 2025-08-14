@@ -1,0 +1,40 @@
+{
+  "홍예크레인": {
+    "owners": [
+      "홍예크레인",
+      "꼬질크레인",
+      "옐로지게차",
+      "DL",
+      "DL디에르트"
+    ],
+    "tenants": [
+      "상록건설",
+      "케이건설",
+      "행복건설",
+      "하늘PC",
+      "DLPC",
+      "DL",
+      "하늘땅"
+    ]
+  },
+  "케이중기": {
+    "owners": [],
+    "tenants": []
+  },
+  "쓰레기회사": {
+    "owners": [],
+    "tenants": []
+  },
+  "regitest01": {
+    "owners": [],
+    "tenants": []
+  },
+  "rtest01": {
+    "owners": [],
+    "tenants": []
+  },
+  "rtest02": {
+    "owners": [],
+    "tenants": []
+  }
+}

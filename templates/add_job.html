@@ -1,239 +1,402 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>작업 등록</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            max-width: 600px;
-            margin: 40px auto;
-            padding: 20px;
-            background: #f8f8f8;
-            border-radius: 10px;
-        }
-        h2 { text-align: center; }
-        label {
-            font-weight: bold;
-            display: block;
-            margin-top: 20px;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 8px;
-            margin-top: 6px;
-            box-sizing: border-box;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-        }
-        textarea { height: 80px; resize: vertical; }
-        button {
-            margin-top: 25px;
-            width: 100%;
-            padding: 12px;
-            background-color: #4CAF50;
-            color: white;
-            font-size: 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        button:hover { background-color: #45a049; }
-        a {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            color: #555;
-            text-decoration: none;
-        }
-        a:hover { text-decoration: underline; }
-        .inline-selects { display: flex; gap: 10px; }
-        .inline-selects select { width: 50%; }
-        .hidden { display: none; }
-        /* 모달 스타일 */
-        #successModal {
-            display: none;
-            position: fixed; left:0; top:0; width:100vw; height:100vh;
-            background:rgba(0,0,0,0.25); justify-content:center; align-items:center; z-index:1000;
-        }
-        #successModal .modal-content {
-            background: white;
-            padding: 28px 40px;
-            border-radius: 12px;
-            text-align: center;
-            min-width: 280px;
-            box-shadow: 0 2px 16px rgba(0,0,0,0.18);
-        }
-        #successModal .modal-content h3 { margin-bottom: 22px; font-size: 20px; }
-        #successModal button {
-            padding: 10px 22px;
-            border-radius: 7px;
-            margin: 0 10px;
-            font-size: 17px;
-            border: none;
-            cursor: pointer;
-            color: white;
-        }
-        #successModal .keep-btn { background: #2196F3; }
-        #successModal .check-btn { background: #1ab07a; }
-        #successModal .keep-btn:hover { background: #1976D2; }
-        #successModal .check-btn:hover { background: #168c5a; }
-    </style>
+  <meta charset="UTF-8" />
+  <title>작업 등록</title>
+  <style>
+    :root{ --border:#e5e7eb; --muted:#6b7280; --blue:#2563eb; --green:#16a34a; --red:#ef4444;}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'맑은 고딕',sans-serif; max-width:720px; margin:36px auto; padding:20px; background:#f8f9fb;}
+    h2{margin:0 0 16px; text-align:center;}
+    .card{background:#fff; border:1px solid var(--border); border-radius:12px; padding:18px;}
+    label{display:block; font-weight:700; margin-top:14px;}
+    input,select,textarea{width:100%; box-sizing:border-box; margin-top:6px; padding:9px 10px; border:1px solid var(--border); border-radius:8px; font-size:14px; background:#fff;}
+    textarea{height:80px; resize:vertical;}
+    .row{display:flex; gap:10px;}
+    .row > *{flex:1;}
+    .actions{display:flex; gap:10px; justify-content:space-between; margin-top:18px; align-items:center;}
+    .btn{border:none; border-radius:8px; padding:10px 14px; font-size:14px; cursor:pointer; text-decoration:none;}
+    .btn-next{background:var(--blue); color:#fff;}
+    .btn-prev{background:#eef2f7; color:#111827;}
+    .btn-submit{background:var(--green); color:#fff;}    /* width:100% 제거 */
+    .btn-ghost{background:#eef2f7; color:#111827;}
+    .btn-grow{flex:1;}                                    /* 제출 버튼은 가로로 넓게 */
+    .hint{font-size:12px; color:var(--muted); margin-top:4px;}
+
+    /* wizard */
+    .steps{display:flex; gap:6px; justify-content:center; margin-bottom:12px; flex-wrap:wrap;}
+    .dot{min-width:26px; height:26px; padding:0 8px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:12px; border:1px solid var(--border); background:#fff; color:#111;}
+    .dot.on{background:var(--blue); color:#fff; border-color:var(--blue);}
+    .step{display:none;}
+    .step.active{display:block;}
+    .inline-selects{display:flex; gap:10px;}
+    .inline-selects select{flex:1;}
+    .two{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+    @media (max-width:560px){ .two{grid-template-columns:1fr;} }
+
+    /* 한 줄 고정 유틸 */
+    .chk-line{display:flex; align-items:center; gap:8px; margin-top:8px; white-space:nowrap;}
+    .chk-inline{display:inline-flex; align-items:center; gap:6px; white-space:nowrap;}
+    .spare-inline{display:inline-flex; align-items:center; gap:6px; white-space:nowrap; flex:0 0 auto;}
+    .chk-save{margin-top:6px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;}
+    .row-between{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+
+    /* 외주 칩 */
+    .tag-blue{display:inline-block;padding:2px 6px;border-radius:8px;background:#e6f0ff;color:#1d4ed8;font-size:12px;}
+    .tag-purple{display:inline-block;padding:2px 6px;border-radius:8px;background:#ede9fe;color:#6d28d9;font-size:12px;}
+
+    /* 위치 자동완성 */
+    .relative{position:relative;}
+    .sug{position:absolute; left:0; right:0; top:100%; background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 6px 16px rgba(0,0,0,.06); max-height:220px; overflow:auto; z-index:40; margin-top:6px; display:none;}
+    .sug.show{display:block;}
+    .sug div{padding:8px 10px; cursor:pointer;}
+    .sug div:hover{background:#f3f4f6;}
+    .readonly-like{ background:#f3f4f6; color:#6b7280; }
+  </style>
 </head>
 <body>
-
-<h2>작업 등록</h2>
-
-{% if error %}
-    <div style="color: red; margin-bottom: 10px;">{{ error }}</div>
-{% endif %}
-
-<form method="POST" autocomplete="off">
-    <label for="date">날짜</label>
-    <input type="date" id="date" name="date" required>
-
-    <label>시간 선택</label>
-    <div class="inline-selects">
-        <select id="hour" name="hour" required>
-            <option value="">시</option>
-            {% for h in range(0,24) %}
-                <option value="{{ '%02d' % h }}">{{ '%02d' % h }} 시</option>
-            {% endfor %}
-        </select>
-        <select id="minute" name="minute" required>
-            <option value="">분</option>
-            {% for m in [0,10,20,30,40,50] %}
-                <option value="{{ '%02d' % m }}">{{ '%02d' % m }} 분</option>
-            {% endfor %}
-        </select>
-    </div>
-
-    <label>기사 선택 또는 직접입력</label>
-    <select id="worker_select" onchange="document.getElementById('worker_input').value = this.value;">
-        <option value="">선택 안함</option>
-        {% for worker in workers %}
-            <option value="{{ worker['name'] }}">{{ worker['name'] }}({{ worker['username'][:worker['username']|length - worker['name']|length] }})</option>
-        {% endfor %}
-    </select>
-    <input type="text" id="worker_input" name="worker" placeholder="직접입력 또는 드롭다운 선택">
-
-    <label>장비 선택 또는 직접입력</label>
-    <select onchange="
-        var opt = this.options[this.selectedIndex];
-        document.getElementById('machine_name_input').value = opt.dataset.name || '';
-        document.getElementById('machine_number_input').value = opt.dataset.number || '';
-        document.getElementById('machine_alias_input').value = opt.dataset.alias || '';
-    ">
-        <option value="">선택 안함</option>
-        {% for m in machines %}
-            <option 
-                data-name="{{ m.name }}" 
-                data-number="{{ m.number }}" 
-                data-alias="{{ m.alias }}">
-                {{ m.name }} / {{ m.number }}{% if m.alias %} / {{ m.alias }}{% endif %}
-            </option>
-        {% endfor %}
-    </select>
-    <input type="text" id="machine_name_input" name="machine_name_input" placeholder="장비명" required>
-    <input type="text" id="machine_number_input" name="machine_number_input" placeholder="차량번호" required>
-    <input type="text" id="machine_alias_input" name="machine_alias_input" placeholder="별칭/연식(선택)">
-
-    <label>거래처 선택 또는 직접입력</label>
-    <select onchange="document.getElementById('client_input').value = this.value;">
-        <option value="">선택 안함</option>
-        {% for client in clients %}
-            <option value="{{ client }}">{{ client }}</option>
-        {% endfor %}
-    </select>
-    <input type="text" id="client_input" name="client_input" placeholder="직접입력 또는 드롭다운 선택">
-
-    <label>작업 위치 선택 또는 직접입력</label>
-    <select onchange="document.getElementById('location_input').value = this.value;">
-        <option value="">선택 안함</option>
-        {% for location in locations %}
-            <option value="{{ location }}">{{ location }}</option>
-        {% endfor %}
-    </select>
-    <input type="text" id="location_input" name="location" required>
-
-    <label>요청사항</label>
-    <textarea name="note"></textarea>
-
-    <!-- 추가: 작업 기간 -->
-    <label>작업 기간</label>
-    <select name="duration_type" id="duration_type">
-        <option value="하루" selected>하루</option>
-        <option value="반나절">반나절</option>
-        <option value="N시간">N시간</option>
-    </select>
-
-    <div id="hours_box" class="hidden">
-        <label>N시간 선택</label>
-        <select name="duration_hours">
-            {% for i in range(1, 13) %}
-                <option value="{{ i }}">{{ i }}시간</option>
-            {% endfor %}
-        </select>
-    </div>
-
-    <button type="submit">작업 등록</button>
-
-    <!-- (기존 입력들 아래 아무데나 자연스러운 위치에 추가) -->
-<label for="amount_man">금액 (만원 단위)</label>
-<input type="number" id="amount_man" name="amount_man" min="0" step="1" placeholder="예: 35">
-
-<label style="display:flex; align-items:center; gap:8px; margin-top:10px;">
-  <input type="checkbox" name="share_amount" value="1">
-  <span>금액을 기사에게도 공유</span>
-</label>
-
-</form>
-
-<form action="{{ url_for('dashboard') }}" method="get" style="margin-top:20px;">
-    <button type="submit" style="font-size: 16px; cursor:pointer;">🏠 메인화면으로 돌아가기</button>
-</form>
-
-<!-- 작업 등록 성공 모달 -->
-<div id="successModal">
-  <div class="modal-content">
-    <h3>작업이 등록되었습니다!</h3>
-    <button class="keep-btn" onclick="closeModal()">페이지 유지</button>
-    <button class="check-btn" onclick="location.href='/jobs'">작업 확인하기</button>
+  {% set prev = prev if prev is defined else {} %}
+  <h2>작업 등록</h2>
+  <div style="display:flex;justify-content:flex-end;max-width:720px;margin:0 auto 8px;">
+    <button type="button" class="btn btn-ghost" id="resetBtn">초기화</button>
   </div>
-</div>
 
-<script>
-    document.querySelector('form').addEventListener('submit', function(e) {
-        const hour = document.getElementById('hour').value;
-        const minute = document.getElementById('minute').value;
-        if (!hour || !minute) {
-            alert('시간(시, 분)을 모두 선택해주세요.');
-            e.preventDefault();
-            return false;
-        }
-        let timeInput = document.createElement('input');
-        timeInput.type = 'hidden';
-        timeInput.name = 'time';
-        timeInput.value = hour + ':' + minute;
-        this.appendChild(timeInput);
+  {% if error %}
+    <div class="card" style="border-color:#fca5a5; background:#fff1f2; color:#991b1b; margin-bottom:12px;">
+      {{ error }}
+    </div>
+  {% endif %}
+
+  <div class="steps" id="stepsBar">
+    <span class="dot on">1</span><span class="dot">2</span><span class="dot">3</span><span class="dot">4</span>
+    <span class="dot">5</span><span class="dot">6</span><span class="dot">7</span><span class="dot">8</span><span class="dot">9</span>
+  </div>
+
+  <form id="jobForm" method="POST" autocomplete="off" class="card">
+    <!-- 1 날짜 -->
+    <div class="step active" data-step="1">
+      <label for="date">날짜</label>
+      <input type="date" id="date" name="date" value="{{ prev.get('date','') }}" required>
+      <div class="actions"><span></span><button type="button" class="btn btn-next" onclick="nextStep()">다음</button></div>
+    </div>
+
+    <!-- 2 시간 -->
+    <div class="step" data-step="2">
+      <label>시간 선택</label>
+      <div class="inline-selects">
+        <select id="hour" name="hour">
+          <option value="">시</option>
+          {% for h in range(0,24) %}{% set hh = "%02d"|format(h) %}
+            <option value="{{ hh }}" {{ 'selected' if prev.get('hour','')==hh else '' }}>{{ hh }} 시</option>
+          {% endfor %}
+        </select>
+        <select id="minute" name="minute">
+          <option value="">분</option>
+          {% for m in [0,10,20,30,40,50] %}{% set mm = "%02d"|format(m) %}
+            <option value="{{ mm }}" {{ 'selected' if prev.get('minute','')==mm else '' }}>{{ mm }} 분</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="hint">제출 시 <code>HH:MM</code> 으로 합쳐 저장됩니다.</div>
+      <div class="actions">
+        <button type="button" class="btn btn-prev" onclick="prevStep()">이전</button>
+        <button type="button" class="btn btn-next" onclick="nextStep()">다음</button>
+      </div>
+    </div>
+
+    <!-- 3 기사 -->
+    <div class="step" data-step="3">
+      <label>기사 선택 또는 직접입력</label>
+      <select id="worker_select" onchange="document.getElementById('worker_input').value=this.value;">
+        <option value="">선택 안함</option>
+        {% for worker in workers %}<option value="{{ worker['name'] }}">{{ worker['name'] }}</option>{% endfor %}
+      </select>
+      <div class="chk-line">
+        <input type="text" id="worker_input" name="worker" value="{{ prev.get('worker','') }}" placeholder="기사명 직접입력">
+        <label class="spare-inline" for="spare_cb"><input id="spare_cb" type="checkbox" name="is_spare" value="1" {{ 'checked' if prev.get('is_spare') else '' }}> 스페어</label>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-prev" onclick="prevStep()">이전</button>
+        <a class="btn btn-ghost" href="{{ url_for('add_worker') }}?from=add_job">기사 등록/관리</a>
+        <button type="button" class="btn btn-next" onclick="nextStep()">다음</button>
+      </div>
+    </div>
+
+    <!-- 4 장비 -->
+    <div class="step" data-step="4">
+      <label>장비 선택 또는 직접입력</label>
+      <select onchange="
+        var o=this.options[this.selectedIndex];
+        document.getElementById('machine_name_input').value=o.dataset.name||'';
+        document.getElementById('machine_number_input').value=o.dataset.number||'';
+        document.getElementById('machine_alias_input').value=o.dataset.alias||'';
+      ">
+        <option value="">선택 안함</option>
+        {% for m in machines %}<option data-name="{{ m.name }}" data-number="{{ m.number }}" data-alias="{{ m.alias }}">{{ m.name }} / {{ m.number }}{% if m.alias %} / {{ m.alias }}{% endif %}</option>{% endfor %}
+      </select>
+      <div class="two">
+        <input type="text" id="machine_name_input" name="machine_name_input"  value="{{ prev.get('machine_name_input','') }}" placeholder="장비명">
+        <input type="text" id="machine_number_input" name="machine_number_input" value="{{ prev.get('machine_number_input','') }}" placeholder="차량번호">
+      </div>
+      <input type="text" id="machine_alias_input" name="machine_alias_input" value="{{ prev.get('machine_alias_input','') }}" placeholder="별칭/연식(선택)">
+      <div class="actions">
+        <button type="button" class="btn btn-prev" onclick="prevStep()">이전</button>
+        <a class="btn btn-ghost" href="{{ url_for('manage_machines') }}?from=add_job">장비 관리</a>
+        <button type="button" class="btn btn-next" onclick="nextStep()">다음</button>
+      </div>
+    </div>
+
+    <!-- 5 거래처 -->
+    <div class="step" data-step="5">
+      <label>발주자(원수급자)</label>
+      <input list="owners_datalist" name="client_primary" value="{{ prev.get('client_primary','') }}" placeholder="예: 홍예…">
+      <datalist id="owners_datalist">{% for o in owners %}<option value="{{ o }}"></option>{% endfor %}</datalist>
+      <label class="chk-save"><input type="checkbox" name="save_owner" value="1"> 내 거래처에 저장</label>
+
+      <div class="row-between" style="margin-top:14px;">
+        <label style="margin:0;">건설업자(임차인)</label>
+        <label class="chk-inline" for="same_as_owner"><input id="same_as_owner" type="checkbox" name="same_as_owner" value="1"> 원수급자와 동일</label>
+      </div>
+      <input list="tenants_datalist" id="tenant_input" name="client_tenant" value="{{ prev.get('client_tenant','') }}" placeholder="예: 가나다…">
+      <datalist id="tenants_datalist">{% for t in tenants %}<option value="{{ t }}"></option>{% endfor %}</datalist>
+      <label class="chk-save"><input type="checkbox" name="save_tenant" value="1"> 내 거래처에 저장</label>
+
+      <div class="actions">
+        <button type="button" class="btn btn-prev" onclick="prevStep()">이전</button>
+        <a class="btn btn-ghost" href="{{ url_for('manage_clients') }}?from=add_job">거래처 관리</a>
+        <button type="button" class="btn btn-next" onclick="nextStep()">다음</button>
+      </div>
+    </div>
+
+    <!-- 6 위치 -->
+    <div class="step" data-step="6">
+      <label>작업 위치 (직접 입력)</label>
+      <div class="relative">
+        <input type="text" id="location_input" name="location" value="{{ prev.get('location','') }}" placeholder="예: 수원 ○○현장">
+        <div id="locSug" class="sug"></div>
+      </div>
+      <div class="hint">최근 입력했던 주소 최대 20개가 자동완성으로 표시됩니다.</div>
+      <div class="actions">
+        <button type="button" class="btn btn-prev" onclick="prevStep()">이전</button>
+        <button type="button" class="btn btn-next" onclick="nextStep()">다음</button>
+      </div>
+    </div>
+
+    <!-- 7 기간 -->
+    <div class="step" data-step="7">
+      <label for="duration_type">작업 기간</label>
+      <select id="duration_type" name="duration_type">
+        {% set dt = prev.get('duration_type','하루') %}
+        <option value="하루"   {{ 'selected' if dt=='하루' else '' }}>하루</option>
+        <option value="반나절" {{ 'selected' if dt=='반나절' else '' }}>반나절</option>
+        <option value="N시간"  {{ 'selected' if dt=='N시간' else '' }}>N시간</option>
+      </select>
+      <select id="duration_hours" name="duration_hours" style="display:none;margin-top:8px;">
+        {% set dh = prev.get('duration_hours','') %}
+        {% for n in range(1,25) %}<option value="{{ n }}" {{ 'selected' if (dh|string)==(n|string) else '' }}>{{ n }}</option>{% endfor %}
+      </select>
+      <div class="actions">
+        <button type="button" class="btn btn-prev" onclick="prevStep()">이전</button>
+        <button type="button" class="btn btn-next" onclick="nextStep()">다음</button>
+      </div>
+    </div>
+
+    <!-- 8 금액/공유 -->
+    <div class="step" data-step="8">
+      <label for="amount_man">금액 (만원)</label>
+      <input type="number" id="amount_man" name="amount_man" min="0" step="1" value="{{ prev.get('amount_man','') }}" placeholder="예: 35">
+      <label class="chk-save"><input type="checkbox" id="share_amount" name="share_amount" value="1" {{ 'checked' if prev.get('share_amount') else '' }}> 금액을 기사에게 공유</label>
+      <div class="actions">
+        <button type="button" class="btn btn-prev" onclick="prevStep()">이전</button>
+        <button type="button" class="btn btn-next" onclick="nextStep()">다음</button>
+      </div>
+    </div>
+
+    <!-- 9 외주/요청사항 + 제출 -->
+    <div class="step" data-step="9">
+      <label>외주</label>
+      <div class="row">
+        <label class="chk-line" style="flex:unset;"><input type="radio" name="outsource_type" value="none"     {{ 'checked' if prev.get('outsource_type','none')=='none' else '' }}> 없음</label>
+        <label class="chk-line" style="flex:unset;"><input type="radio" name="outsource_type" value="received" {{ 'checked' if prev.get('outsource_type')=='received' else '' }}> 받음 <span class="tag-blue">외주</span></label>
+        <label class="chk-line" style="flex:unset;"><input type="radio" name="outsource_type" value="given"    {{ 'checked' if prev.get('outsource_type')=='given' else '' }}> 줬음 <span class="tag-purple">외주</span></label>
+      </div>
+      <input type="text" name="outsource_partner" value="{{ prev.get('outsource_partner','') }}" placeholder="외주 업체명 (예: 가나다크레인)">
+      <label>요청사항</label>
+      <textarea name="note">{{ prev.get('note','') }}</textarea>
+      <div class="actions" style="margin-top:12px;">
+        <button type="button" class="btn btn-prev" onclick="prevStep()">이전</button>
+        <button type="submit" class="btn btn-submit btn-grow">작업 등록</button>
+      </div>
+    </div>
+  </form>
+
+  <form action="{{ url_for('dashboard') }}" method="get" style="margin-top:16px;">
+    <button type="submit" class="btn btn-ghost" style="width:100%;">🏠 메인화면으로 돌아가기</button>
+  </form>
+
+  <!-- 등록 성공 모달 -->
+  <div id="successModal" style="display:none;position:fixed;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,.28);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:#fff;padding:24px;border-radius:14px;min-width:280px;box-shadow:0 10px 35px rgba(0,0,0,.2);text-align:center;">
+      <h3 style="margin:0 0 12px;">작업이 등록되었습니다!</h3>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <a class="btn btn-ghost" href="{{ url_for('add_job') }}">작업등록 이어서하기</a>
+        <a class="btn btn-next"  href="{{ url_for('view_jobs') }}">등록된 작업 확인하기</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==== 서버 데이터 ====
+    const RECENT_LOCS = {{ (locations or [])|tojson|safe }};
+    const DRAFT_KEY = 'add_job_wizard_draft';
+    let ALLOW_SAVE = true;
+
+    // 초기화
+        document.getElementById('resetBtn').addEventListener('click', (e)=>{
+      e.preventDefault();
+      ALLOW_SAVE = false;                                 // 자동 저장 끄기
+      window.removeEventListener('beforeunload', saveDraft);
+      sessionStorage.removeItem(DRAFT_KEY);
+      sessionStorage.removeItem(DRAFT_KEY + ':step');
+      location.replace("{{ url_for('add_job') }}");       // 완전 새로 로드
     });
 
-    // N시간 선택 시 드롭다운 표시
-    const typeSel = document.getElementById('duration_type');
-    const hoursBox = document.getElementById('hours_box');
-    typeSel.addEventListener('change', () => {
-        hoursBox.classList.toggle('hidden', typeSel.value !== 'N시간');
-    });
+    // N시간 표시 토글
+    (function(){
+      const typeSel = document.getElementById('duration_type');
+      const hoursSel = document.getElementById('duration_hours');
+      const sync = ()=> hoursSel.style.display = (typeSel.value === 'N시간') ? '' : 'none';
+      typeSel.addEventListener('change', sync); sync();
+    })();
 
-    {% if job_registered %}
-        document.getElementById('successModal').style.display = 'flex';
-    {% endif %}
+    // 임차인 = 원수급자와 동일
+    (function(){
+      const same = document.getElementById('same_as_owner');
+      const ownerIn = document.querySelector('input[name="client_primary"]');
+      const tenantIn= document.getElementById('tenant_input');
+      if(!same || !ownerIn || !tenantIn) return;
+      const lock = (on)=>{
+        if(on){ tenantIn.value = ownerIn.value || ''; tenantIn.readOnly = true; tenantIn.classList.add('readonly-like'); }
+        else  { tenantIn.readOnly = false; tenantIn.classList.remove('readonly-like'); }
+      };
+      lock(same.checked);
+      same.addEventListener('change', ()=> lock(same.checked));
+      ownerIn.addEventListener('input', ()=> { if(same.checked) tenantIn.value = ownerIn.value; });
+    })();
 
-    function closeModal(){
-        document.getElementById('successModal').style.display = 'none';
+    // 위치 자동완성
+    (function(){
+      const inp = document.getElementById('location_input');
+      const box = document.getElementById('locSug');
+      if(!inp || !box) return;
+      const uniq = (arr)=>[...new Map(arr.map(v=>[String(v||'').trim(), String(v||'').trim()])).values()];
+      const base = uniq(RECENT_LOCS).filter(Boolean).slice(0,20);
+      function render(list){
+        box.innerHTML = '';
+        list.forEach(v=>{
+          const d = document.createElement('div'); d.textContent = v;
+          d.addEventListener('mousedown', (e)=>{ e.preventDefault(); inp.value = v; hide(); });
+          box.appendChild(d);
+        });
+        box.classList.toggle('show', list.length>0);
+      }
+      function hide(){ box.classList.remove('show'); }
+      function filter(){
+        const q = (inp.value||'').trim().toLowerCase();
+        if(!q){ render(base); return; }
+        render(base.filter(v => v.toLowerCase().includes(q)));
+      }
+      inp.addEventListener('focus', filter);
+      inp.addEventListener('input', filter);
+      inp.addEventListener('blur', ()=> setTimeout(hide, 120));
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') hide(); });
+    })();
+
+    // ===== 위저드 & 초안 저장 =====
+    let cur = 1, maxStep = 9;
+    const steps = [...document.querySelectorAll('.step')];
+    const dots  = [...document.querySelectorAll('#stepsBar .dot')];
+
+    function showStep(n){
+      cur = n;
+      steps.forEach(s => s.classList.toggle('active', +s.dataset.step===n));
+      dots.forEach((d,i)=> d.classList.toggle('on', i < n));
+      sessionStorage.setItem(DRAFT_KEY + ':step', String(n));
+      window.scrollTo({top:0, behavior:'smooth'});
     }
-</script>
+    window.nextStep = function(){ if(!validate(cur)) return; if(cur < maxStep) showStep(cur+1); }
+    window.prevStep = function(){ if(cur > 1) showStep(cur-1); }
 
+    function validate(n){
+      if(n===1){ if(!document.getElementById('date').value){ alert('날짜를 입력해 주세요.'); return false; } }
+      if(n===2){
+        const h=document.getElementById('hour').value, m=document.getElementById('minute').value;
+        if(!h||!m){ alert('시간(시/분)을 선택해 주세요.'); return false; }
+      }
+      if(n===3){ if(!document.getElementById('worker_input').value.trim()){ alert('기사를 입력(또는 선택)해 주세요.'); return false; } }
+      if(n===4){
+        const mn=document.getElementById('machine_name_input').value.trim();
+        const no=document.getElementById('machine_number_input').value.trim();
+        if(!mn||!no){ alert('장비명과 차량번호를 입력해 주세요.'); return false; }
+      }
+      if(n===5){
+        const p=document.querySelector('input[name="client_primary"]').value.trim();
+        if(!p){ alert('발주자(원수급자)를 입력해 주세요.'); return false; }
+      }
+      if(n===6){ if(!document.getElementById('location_input').value.trim()){ alert('작업 위치를 입력해 주세요.'); return false; } }
+      return true;
+    }
+
+    function saveDraft(){
+      if (!ALLOW_SAVE) return; 
+      const form = document.getElementById('jobForm');
+      const data = new FormData(form);
+      const obj = {};
+      data.forEach((v,k)=>{ if(!(k in obj)) obj[k]=v; }); // 단일값만
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(obj));
+      sessionStorage.setItem(DRAFT_KEY + ':step', String(cur));
+    }
+    function loadDraft(){
+      try{
+        const raw = sessionStorage.getItem(DRAFT_KEY);
+        if(raw){
+          const obj = JSON.parse(raw);
+          Object.entries(obj).forEach(([k,v])=>{
+            const el = document.querySelector('[name="'+CSS.escape(k)+'"]'); // ← 버그 수정
+            if(!el) return;
+            if(el.type==='checkbox' || el.type==='radio'){
+              el.checked = (String(el.value)===String(v)) || (v===true || v==='on' || v==='1');
+            }else{
+              el.value = v;
+            }
+          });
+        }
+        const stepRaw = sessionStorage.getItem(DRAFT_KEY + ':step'); 
+        showStep(stepRaw ? (+stepRaw || 1) : 1);
+      }catch(e){}
+    }
+    document.getElementById('jobForm').addEventListener('input', saveDraft);
+    window.addEventListener('beforeunload', saveDraft);                  // 페이지 떠날 때 저장
+    // 관리페이지로 이동하는 링크 클릭 시도 저장
+    document.querySelectorAll('a[href*="from=add_job"]').forEach(a=>{
+      a.addEventListener('click', saveDraft);
+    });
+    window.addEventListener('load', loadDraft);
+
+    // 제출 시: 시간 합치기, N시간 처리, 초안 삭제
+    document.getElementById('jobForm').addEventListener('submit', function(e){
+      const ok = validate(1)&&validate(2)&&validate(3)&&validate(4)&&validate(5)&&validate(6);
+      if(!ok){ e.preventDefault(); return; }
+      const h=document.getElementById('hour').value, m=document.getElementById('minute').value;
+      const t=document.createElement('input'); t.type='hidden'; t.name='time'; t.value=h+':'+m; this.appendChild(t);
+      if(document.getElementById('duration_type').value !== 'N시간'){
+        const dh=document.getElementById('duration_hours'); if(dh) dh.disabled = true;
+      }
+      sessionStorage.removeItem(DRAFT_KEY);
+      sessionStorage.removeItem(DRAFT_KEY + ':step');
+    });
+
+    // 성공 모달
+    {% if job_registered %} document.getElementById('successModal').style.display = 'flex'; {% endif %}
+  </script>
 </body>
 </html>
