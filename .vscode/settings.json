@@ -1,0 +1,10 @@
+﻿{
+  // 워크스페이스에 들어오면 이 파이썬 인터프리터를 기본 사용
+  "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+
+  // 터미널 열 때 자동으로 가상환경 활성화
+  "python.terminal.activateEnvironment": true,
+
+  // (선택) 터미널 기본을 PowerShell로
+  "terminal.integrated.defaultProfile.windows": "PowerShell"
+}

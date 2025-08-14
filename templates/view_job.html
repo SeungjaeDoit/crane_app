@@ -39,7 +39,7 @@
     .calendar-wrap{ display:flex; justify-content:center; gap:10px; margin:10px 0 16px; }
 
     /* 표/상세 */
-    .bulk{display:flex; gap:10px; align-items:center; margin: 6px 0 14px;}
+    .bulk{display:flex; gap:10px; align-items:center; margin: 6px 0 14px; flex-wrap:wrap;}
     .hint{color:var(--muted); font-size:13px;}
     .table-wrap{background:#fff; border-radius:var(--radius); border:1px solid var(--border); overflow-x:auto;}
     table{width:100%; border-collapse:collapse; table-layout:fixed; min-width:960px;}
@@ -78,141 +78,194 @@
     }
   </style>
 </head>
-
 <script>
 "use strict";
 
-document.addEventListener('DOMContentLoaded', () => {
-  const selectAll = document.getElementById('selectAll');
-  if (selectAll) {
-    selectAll.addEventListener('change', function(){
-      document.querySelectorAll('input[name="selected_jobs"]').forEach(cb => cb.checked = this.checked);
+(function(){
+  /* ===== 선택 상태 localStorage 보관 ===== */
+  function _key(){ return "jobs_selected_indices"; }
+  function getSel(){
+    try { return JSON.parse(localStorage.getItem(_key()) || "[]"); }
+    catch { return []; }
+  }
+  function setSel(list){
+    const norm = Array.from(new Set(list.map(v => parseInt(v,10)).filter(n => !isNaN(n))));
+    localStorage.setItem(_key(), JSON.stringify(norm));
+  }
+  function syncCheckboxesFromStorage(){
+    const selSet = new Set(getSel().map(String));
+
+    // 개별 체크박스 동기화 + 변경 시 저장
+    document.querySelectorAll('input[name="selected_jobs"]').forEach(cb => {
+      cb.checked = selSet.has(cb.value);
+      cb.addEventListener("change", () => {
+        const cur = new Set(getSel());
+        const v = parseInt(cb.value,10);
+        if (cb.checked) cur.add(v); else cur.delete(v);
+        setSel([...cur]);
+      });
+    });
+
+    // 전체 선택
+    const all = document.getElementById("selectAll");
+    if (all){
+      all.addEventListener("change", () => {
+        const want = all.checked;
+        const cur = new Set(getSel());
+        document.querySelectorAll('input[name="selected_jobs"]').forEach(cb => {
+          cb.checked = want;
+          const v = parseInt(cb.value,10);
+          if (want) cur.add(v); else cur.delete(v);
+        });
+        setSel([...cur]);
+      });
+    }
+  }
+  document.addEventListener("DOMContentLoaded", syncCheckboxesFromStorage);
+  window.addEventListener("pageshow",   syncCheckboxesFromStorage);
+
+  /* ===== 선택값을 폼에 숨은필드로 붙이기 ===== */
+  function attachHiddenSelected(form){
+    form.querySelectorAll('input[type="hidden"][name="selected_jobs"]').forEach(el => el.remove());
+    getSel().forEach(v => {
+      const i = document.createElement("input");
+      i.type = "hidden"; i.name = "selected_jobs"; i.value = String(v);
+      form.appendChild(i);
     });
   }
 
-  document.body.addEventListener('click', (e) => {
-    const btn = e.target.closest('.arrow');
+  /* ===== 일괄 처리(완료/삭제) ===== */
+  window.setBulk = function(action){
+    if (action === "delete" && !confirm("선택한 작업을 삭제하시겠습니까?")) return;
+    document.getElementById("bulkAction").value = action;
+    const form = document.getElementById("bulkForm");
+    attachHiddenSelected(form);
+    form.submit();
+  };
+
+  /* ===== 선택 엑셀 받기 ===== */
+  window.exportSelected = function(){
+    const selected = getSel();
+    if (!selected.length){ alert("선택된 작업이 없습니다."); return; }
+
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "{{ url_for('export_selected_xlsx') }}";  // 서버 라우트 이름
+    form.style.display = "none";
+    document.body.appendChild(form);
+
+    attachHiddenSelected(form);
+    form.submit();
+    setTimeout(() => form.remove(), 1000);
+  };
+
+  /* ===== 상세보기(화살표) 토글 ===== */
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".arrow");
     if (!btn) return;
     const id = btn.dataset.target;
     const row = document.getElementById(id);
     if (!row) return;
-    const open = row.style.display === 'table-row';
-    row.style.display = open ? 'none' : 'table-row';
-    btn.textContent = open ? '▼' : '▲';
+    const open = row.style.display === "table-row";
+    row.style.display = open ? "none" : "table-row";
+    btn.textContent = open ? "▼" : "▲";
   });
-});
 
-function setPStatusBadge(el, status){
-  if(!el) return;
-  el.classList.remove('price-chip','price-missing','badge-partial','badge-unpaid');
-  if(status === '부분') el.classList.add('badge-partial');
-  else if(status === '미납') el.classList.add('badge-unpaid');
-  else if(status === '미설정') el.classList.add('price-missing');
-  else el.classList.add('price-chip');
-}
+  /* ===== 결제/상태 토글 ===== */
+  function setPStatusBadge(el, status){
+    if(!el) return;
+    el.classList.remove("price-chip","price-missing","badge-partial","badge-unpaid");
+    if(status === "부분") el.classList.add("badge-partial");
+    else if(status === "미납") el.classList.add("badge-unpaid");
+    else if(status === "미설정") el.classList.add("price-missing");
+    else el.classList.add("price-chip");
+  }
 
-function setBulk(action){
-  if (action === 'delete' && !confirm('선택한 작업을 삭제하시겠습니까?')) return;
-  document.getElementById('bulkAction').value = action;
-  document.getElementById('bulkForm').submit();
-}
+  function applyPaymentUI(idx, data){
+    const pstatusEl = document.getElementById("pstatus-"+idx);
+    const remainEl  = document.getElementById("remain-"+idx);
+    if(pstatusEl){ pstatusEl.textContent = data.payment_status || ""; setPStatusBadge(pstatusEl, data.payment_status || ""); }
+    if(remainEl){  remainEl.textContent  = "잔액 " + ((data.remaining ?? 0)) + "만"; }
 
-function copyToClipboard(text){
-  navigator.clipboard.writeText(text)
-    .then(()=>{ alert('복사되었습니다: ' + text); })
-    .catch(()=>{ alert('복사에 실패했습니다.'); });
-}
-
-async function toggleStatus(btn){
-  const idx = btn.dataset.index;
-  const url = btn.dataset.url;
-  try{
-    const res = await fetch(url, { method:'POST', headers:{ 'X-Requested-With':'XMLHttpRequest', 'Accept':'application/json' }, credentials:'same-origin' });
-    if (res.redirected){ alert('로그인이 필요합니다.'); location.href = res.url; return; }
-    const ct = res.headers.get('content-type') || '';
-    if (!ct.includes('application/json')){ alert('요청 처리 중 오류가 발생했습니다.'); return; }
-    const data = await res.json();
-    if (!res.ok || !data?.success){ alert('변경 실패: ' + (data?.error || res.status)); return; }
-
-    const cell = document.getElementById('status-'+idx);
-    if(cell){
-      cell.textContent = data.status || '';
-      cell.classList.toggle('done', data.status === '완료');
-      cell.classList.toggle('todo', data.status !== '완료');
-    }
-    document.querySelectorAll(`button.status-toggle[data-index="${idx}"]`).forEach(b=>{
-      b.textContent = (data.status === '완료') ? '완료취소' : '완료';
+    const cell = document.getElementById("paycell-"+idx);
+    if(!cell) return;
+    const btns = cell.querySelectorAll("button");
+    btns.forEach(b=>{
+      if(b.textContent.includes("부분")) return; // 부분완납 버튼은 그대로
+      if(data.payment_status === "완납"){
+        b.classList.remove("btn-green"); b.classList.add("btn-red");
+        b.textContent = "완납취소";
+        b.setAttribute("onclick","toggleFullPaid(this,false)");
+      }else{
+        b.classList.remove("btn-red"); b.classList.add("btn-green");
+        b.textContent = "완납";
+        b.setAttribute("onclick","toggleFullPaid(this,true)");
+      }
     });
-  }catch(err){ console.error(err); alert('네트워크 오류'); }
-}
+  }
 
-async function toggleFullPaid(btn, makeFull){
-  const idx = btn.dataset.index;
-  const url = btn.dataset.url;
-  try{
-    const res = await fetch(url, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
-      credentials:'same-origin',
-      body: JSON.stringify({ action: makeFull ? 'full' : 'unpay' })
-    });
-    if (res.redirected){ alert('로그인이 필요합니다.'); location.href = res.url; return; }
-    const ct = res.headers.get('content-type') || '';
-    if (!ct.includes('application/json')){ alert('요청 처리 중 오류가 발생했습니다.'); return; }
-    const data = await res.json();
-    if (!res.ok || !data?.success){ alert('지불 상태 변경 실패: ' + (data?.error || res.status)); return; }
-    applyPaymentUI(idx, data);
-  }catch(e){ console.error(e); alert('네트워크 오류'); }
-}
+  window.toggleStatus = async function(btn){
+    const idx = btn.dataset.index;
+    const url = btn.dataset.url;
+    try{
+      const res = await fetch(url, { method:"POST", headers:{ "X-Requested-With":"XMLHttpRequest", "Accept":"application/json" }, credentials:"same-origin" });
+      if (res.redirected){ alert("로그인이 필요합니다."); location.href = res.url; return; }
+      const data = await res.json();
+      if (!res.ok || !data?.success){ alert("변경 실패: " + (data?.error || res.status)); return; }
 
-async function partialPaid(btn){
-  const idx = btn.dataset.index;
-  const url = btn.dataset.url;
-  const val = prompt('부분 완납 금액(만원) 입력');
-  if (val === null) return;
-  const n = parseInt(val, 10);
-  if (isNaN(n) || n < 0){ alert('숫자를 입력해 주세요.'); return; }
-  try{
-    const res = await fetch(url, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
-      credentials:'same-origin',
-      body: JSON.stringify({ action:'partial', amount_man:n })
-    });
-    if (res.redirected){ alert('로그인이 필요합니다.'); location.href = res.url; return; }
-    const ct = res.headers.get('content-type') || '';
-    if (!ct.includes('application/json')){ alert('요청 처리 중 오류가 발생했습니다.'); return; }
-    const data = await res.json();
-    if (!res.ok || !data?.success){ alert('부분완납 실패: ' + (data?.error || res.status)); return; }
-    applyPaymentUI(idx, data);
-  }catch(e){ console.error(e); alert('네트워크 오류'); }
-}
+      const cell = document.getElementById("status-"+idx);
+      if(cell){
+        cell.textContent = data.status || "";
+        cell.classList.toggle("done", data.status === "완료");
+        cell.classList.toggle("todo", data.status !== "완료");
+      }
+      document.querySelectorAll(`button.status-toggle[data-index="${idx}"]`).forEach(b=>{
+        b.textContent = (data.status === "완료") ? "완료취소" : "완료";
+      });
+    }catch(err){ console.error(err); alert("네트워크 오류"); }
+  };
 
-function applyPaymentUI(idx, data){
-  const pstatusEl = document.getElementById('pstatus-'+idx);
-  const remainEl  = document.getElementById('remain-'+idx);
-  if(pstatusEl){ pstatusEl.textContent = data.payment_status || ''; setPStatusBadge(pstatusEl, data.payment_status || ''); }
-  if(remainEl){  remainEl.textContent  = '잔액 ' + ((data.remaining ?? 0)) + '만'; }
+  window.toggleFullPaid = async function(btn, makeFull){
+    const idx = btn.dataset.index;
+    const url = btn.dataset.url;
+    try{
+      const res = await fetch(url, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", "Accept":"application/json" },
+        credentials:"same-origin",
+        body: JSON.stringify({ action: makeFull ? "full" : "unpay" })
+      });
+      if (res.redirected){ alert("로그인이 필요합니다."); location.href = res.url; return; }
+      const data = await res.json();
+      if (!res.ok || !data?.success){ alert("지불 상태 변경 실패: " + (data?.error || res.status)); return; }
+      applyPaymentUI(idx, data);
+    }catch(e){ console.error(e); alert("네트워크 오류"); }
+  };
 
-  const cell = document.getElementById('paycell-'+idx);
-  if(!cell) return;
-  const btns = cell.querySelectorAll('button');
-  btns.forEach(b=>{
-    if(b.textContent.includes('부분')) return;
-    if(data.payment_status === '완납'){
-      b.classList.remove('btn-green'); b.classList.add('btn-red');
-      b.textContent = '완납취소';
-      b.setAttribute('onclick','toggleFullPaid(this,false)');
-    }else{
-      b.classList.remove('btn-red'); b.classList.add('btn-green');
-      b.textContent = '완납';
-      b.setAttribute('onclick','toggleFullPaid(this,true)');
-    }
-  });
-}
+  window.partialPaid = async function(btn){
+    const idx = btn.dataset.index;
+    const url = btn.dataset.url;
+    const val = prompt("부분 완납 금액(만원) 입력");
+    if (val === null) return;
+    const n = parseInt(val, 10);
+    if (isNaN(n) || n < 0){ alert("숫자를 입력해 주세요."); return; }
+    try{
+      const res = await fetch(url, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", "Accept":"application/json" },
+        credentials:"same-origin",
+        body: JSON.stringify({ action:"partial", amount_man:n })
+      });
+      if (res.redirected){ alert("로그인이 필요합니다."); location.href = res.url; return; }
+      const data = await res.json();
+      if (!res.ok || !data?.success){ alert("부분완납 실패: " + (data?.error || res.status)); return; }
+      applyPaymentUI(idx, data);
+    }catch(e){ console.error(e); alert("네트워크 오류"); }
+  };
+
+})();
 </script>
-
-<body>
+<body data-company="{{ session.get('company','') }}">
   <h2>전체 작업 목록</h2>
 
   <!-- 검색/필터: 가로 한 줄 -->
@@ -232,7 +285,11 @@ function applyPaymentUI(idx, data){
       {% for t in tenants %}<option value="{{ t }}"></option>{% endfor %}
     </datalist>
 
-    <input type="date" name="date" value="{{ request.args.get('date','') }}" aria-label="날짜">
+    <!-- 날짜 범위 -->
+<input type="date" name="date_from" value="{{ request.args.get('date_from','') }}" aria-label="시작일">
+<span>~</span>
+<input type="date" name="date_to"   value="{{ request.args.get('date_to','') }}"   aria-label="종료일">
+
 
     {% if spare  == '1' %}<input type="hidden" name="spare"  value="1">{% endif %}
     {% if outsrc == '1' %}<input type="hidden" name="outsrc" value="1">{% endif %}
@@ -278,7 +335,9 @@ function applyPaymentUI(idx, data){
     <div class="bulk">
       <button type="button" class="btn btn-green" onclick="setBulk('complete')">선택 완료</button>
       <button type="button" class="btn btn-red"   onclick="setBulk('delete')">선택 삭제</button>
-      <span class="hint">체크한 항목에만 적용됩니다.</span>
+      <button type="button" class="btn btn-ghost" onclick="exportSelected()">선택 엑셀받기</button>
+      <button type="button" class="btn btn-ghost" onclick="clearSelection()">선택 해제</button>
+      <span class="hint">체크한 항목에만 적용됩니다. (검색/필터 변경 시에도 선택 유지)</span>
     </div>
 
     <div class="table-wrap">

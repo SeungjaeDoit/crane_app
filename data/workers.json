@@ -22,24 +22,74 @@
       "status": "active"
     },
     {
-      "username": "홍예크레인이케이",
-      "name": "이케이",
-      "phone": "01033332222",
+      "username": "홍예크레인김서현",
+      "name": "김서현",
+      "phone": "01059599595",
       "role": "worker",
       "status": "active"
-    }
-  ],
-  "케이중기": [],
-  "쓰레기회사": [],
-  "regitest01": [
+    },
     {
-      "username": "regitest01123",
-      "name": "123",
-      "phone": "3333333333",
+      "username": "홍예크레인왕서현",
+      "name": "왕서현",
+      "phone": "01055225252",
+      "role": "worker",
+      "status": "active"
+    },
+    {
+      "username": "홍예크레인노시환",
+      "name": "노시환",
+      "phone": "01053231322",
+      "role": "worker",
+      "status": "active"
+    },
+    {
+      "username": "홍예크레인채은성",
+      "name": "채은성",
+      "phone": "01039292932",
+      "role": "worker",
+      "status": "active"
+    },
+    {
+      "username": "홍예크레인문현빈",
+      "name": "문현빈",
+      "phone": "01039492203",
+      "role": "worker",
+      "status": "active"
+    },
+    {
+      "username": "홍예크레인정우주",
+      "name": "정우주",
+      "phone": "01063032012",
+      "role": "worker",
+      "status": "active"
+    },
+    {
+      "username": "홍예크레인김경문",
+      "name": "김경문",
+      "phone": "01029393293",
+      "role": "worker",
+      "status": "active"
+    },
+    {
+      "username": "홍예크레인한태양",
+      "name": "한태양",
+      "phone": "01029399332",
+      "role": "worker",
+      "status": "active"
+    },
+    {
+      "username": "홍예크레인정문철",
+      "name": "정문철",
+      "phone": "01066311922",
+      "role": "worker",
+      "status": "active"
+    },
+    {
+      "username": "홍예크레인전준우",
+      "name": "전준우",
+      "phone": "01052579932",
       "role": "worker",
       "status": "active"
     }
-  ],
-  "rtest01": [],
-  "rtest02": []
+  ]
 }

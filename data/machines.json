@@ -6,24 +6,65 @@
       "alias": "21년식"
     },
     {
-      "name": "SL300RF",
-      "number": "007가1234",
-      "alias": "테스트"
-    },
-    {
       "name": "KOBELCO",
       "number": "3232",
       "alias": "1999"
     },
     {
-      "name": "립헬",
-      "number": "4423",
-      "alias": "구구구"
+      "name": "Doosan DX225LC",
+      "number": "008가2244",
+      "alias": "21년식"
+    },
+    {
+      "name": "Hyundai R140W-9",
+      "number": "015나8899",
+      "alias": "휠 굴삭기"
+    },
+    {
+      "name": "Volvo EC210B",
+      "number": "010다5566",
+      "alias": "20년식"
+    },
+    {
+      "name": "Kobelco SK200-8",
+      "number": "003라7788",
+      "alias": "200형"
+    },
+    {
+      "name": "CAT 950H Loader",
+      "number": "009마1122",
+      "alias": "로더"
+    },
+    {
+      "name": "Hyundai HL770-9",
+      "number": "006바3344",
+      "alias": "대형 로더"
+    },
+    {
+      "name": "Toyota 8FBN25",
+      "number": "004사9900",
+      "alias": "전동 지게차 2.5t"
+    },
+    {
+      "name": "Doosan D30S-7",
+      "number": "011아2468",
+      "alias": "디젤 지게차 3t"
+    },
+    {
+      "name": "Bobcat S650",
+      "number": "012자1357",
+      "alias": "스키드로더"
+    },
+    {
+      "name": "Kubota U30-6",
+      "number": "013차8080",
+      "alias": "미니 굴삭기"
     }
   ],
   "케이중기": [],
   "쓰레기회사": [],
   "regitest01": [],
   "rtest01": [],
-  "rtest02": []
+  "rtest02": [],
+  "서현크레인": []
 }

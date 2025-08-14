@@ -1,25 +1,43 @@
 from pathlib import Path
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, Response
 from datetime import timedelta
 from functools import wraps
-import json, os
+import json
+import os
+from io import StringIO
+import csv
+import datetime as _dt
+from io import BytesIO
+import datetime as _dt
 
 # --- paths ---
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 
+# 데이터 폴더 보장
+DATA_DIR.mkdir(exist_ok=True)
+
+# === JSON 유틸 (단일 정의로 통합) ===
 def load_json(filename, default):
+    """
+    data/<filename>를 JSON으로 로드. 파일이 없거나 JSON 파싱 실패 시 default 반환.
+    """
     p = DATA_DIR / filename
-    if p.exists():
+    try:
         with p.open("r", encoding="utf-8") as f:
             return json.load(f)
-    return default
+    except (FileNotFoundError, json.JSONDecodeError):
+        return default
 
 def save_json(filename, data):
-    DATA_DIR.mkdir(exist_ok=True)
+    """
+    data/<filename>에 JSON 저장. .tmp로 쓰고 원자적 교체(os.replace)로 안전성 확보.
+    """
     p = DATA_DIR / filename
-    with p.open("w", encoding="utf-8") as f:
+    tmp = p.with_name(p.name + ".tmp")  # file.json.tmp (이전 동작과 동일한 형태)
+    with tmp.open("w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, p)
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
@@ -38,26 +56,7 @@ def _seed_company_containers(company):
             db[company] = seed
             save_json(fname, db)
 
-def load_json(filename, default):
-    path = os.path.join(DATA_DIR, filename)
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return default
-
-def save_json(filename, data):
-    os.makedirs(DATA_DIR, exist_ok=True)
-    path = os.path.join(DATA_DIR, filename)
-    tmp  = path + '.tmp'
-    with open(tmp, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    os.replace(tmp, path)
-
-def back_with_error(msg: str):
-    # alert 후 뒤로가기
-    return f"<script>alert({json.dumps(msg, ensure_ascii=False)});history.back();</script>"
-
+# === 유틸 ===
 def get_current_user():
     users = load_json('users.json', {})
     return users.get(session.get('username'), {}) or {}
@@ -74,9 +73,23 @@ def redirect_with_from(endpoint, **kwargs):
         kwargs['from'] = src
     return redirect(url_for(endpoint, **kwargs))
 
-def back_with_error(endpoint, message, **kwargs):
-    """에러 메시지를 쿼리스트링으로 전달하며 돌아가기"""
-    return redirect_with_from(endpoint, error=message, **kwargs)
+# ⚠️ 기존에 동일한 이름으로 두 번 정의되던 back_with_error를 통합
+def back_with_error(*args, **kwargs):
+    """
+    두 형태 모두 지원:
+    - back_with_error("메시지") -> alert 후 뒤로가기
+    - back_with_error(endpoint, "메시지", **qs) -> ?error=... 붙여 redirect_with_from
+    """
+    # 단일 메시지 형태
+    if len(args) == 1 and isinstance(args[0], str):
+        msg = args[0]
+        return f"<script>alert({json.dumps(msg, ensure_ascii=False)});history.back();</script>"
+    # 리다이렉트 형태
+    if len(args) >= 2:
+        endpoint, message = args[0], args[1]
+        return redirect_with_from(endpoint, error=message, **kwargs)
+    # 안전한 기본값
+    return redirect(url_for('home'))
 
 def ensure_user_entry(users_db, workers_db, company, username):
     """
@@ -269,7 +282,9 @@ def view_jobs():
     q_worker = (request.args.get('worker') or '').strip()
     q_owner  = (request.args.get('owner') or request.args.get('client_primary') or request.args.get('client') or '').strip()
     q_tenant = (request.args.get('tenant') or request.args.get('client_tenant') or '').strip()
-    q_date   = (request.args.get('date') or '').strip()
+    q_date   = (request.args.get('date') or '').strip() 
+    q_from   = (request.args.get('date_from') or '').strip()
+    q_to     = (request.args.get('date_to') or '').strip()
 
     overdue = (request.args.get('overdue') or '').strip()
     dues    = (request.args.get('dues')    or '').strip()
@@ -286,7 +301,12 @@ def view_jobs():
         jobs = [j for j in jobs if _contains(j.get('client_primary') or j.get('client'), q_owner)]
     if q_tenant:
         jobs = [j for j in jobs if _contains(j.get('client_tenant'), q_tenant)]
-    if q_date:
+    if q_from or q_to:
+        def in_range(d):
+                if not d: return False
+                return (not q_from or d >= q_from) and (not q_to or d <= q_to)
+        jobs = [j for j in jobs if in_range((j.get('date') or '').strip())]
+    elif q_date:
         jobs = [j for j in jobs if q_date == (j.get('date') or '')]
 
     if overdue == '1':
@@ -320,7 +340,8 @@ def view_jobs():
         spare=spare,     spare_on_url=spare_on_url,       spare_off_url=spare_off_url,
         outsrc=outsrc,   outsrc_on_url=outsrc_on_url,     outsrc_off_url=outsrc_off_url,
         q_worker=q_worker, q_owner=q_owner, q_tenant=q_tenant, q_date=q_date,
-        owners=owners_list, tenants=tenants_list
+        owners=owners_list, tenants=tenants_list,
+        q_from=q_from, q_to=q_to
     )
 
 # ---------------------------
@@ -496,8 +517,15 @@ def edit_job(job_index):
     tenants   = partners.get('tenants', [])
 
     if request.method == 'POST':
+        # 시간: hidden time 우선, 없으면 hour/minute로 보완
+        t = (request.form.get('time') or '').strip()
+        if not t:
+            hh = (request.form.get('hour') or '').strip()
+            mm = (request.form.get('minute') or '').strip()
+            if hh and mm:
+                t = f"{hh}:{mm}"
+        job['time']           = t
         job['date']           = (request.form.get('date') or '').strip()
-        job['time']           = (request.form.get('time') or '').strip()
         job['worker']         = (request.form.get('worker') or '').strip()
         job['machine_name']   = (request.form.get('machine_name') or '').strip()
         job['machine_number'] = (request.form.get('machine_number') or '').strip()
@@ -511,6 +539,7 @@ def edit_job(job_index):
         job['client_tenant']  = client_tenant
         job['client']         = client_primary
 
+        # 거래처 저장 옵션
         if request.form.get('save_owner') == '1' and client_primary and client_primary not in owners:
             owners.append(client_primary)
         if request.form.get('save_tenant') == '1' and client_tenant and client_tenant not in tenants:
@@ -527,6 +556,7 @@ def edit_job(job_index):
         job['outsource_type']    = ot
         job['outsource_partner'] = (request.form.get('outsource_partner') or '').strip()
 
+        # 금액/지불 상태
         amount_raw = (request.form.get('amount_man') or '').strip()
         try:
             amount_man = int(amount_raw) if amount_raw != '' else 0
@@ -549,8 +579,18 @@ def edit_job(job_index):
             else:
                 job['payment_status'] = '부분'
 
+        # 작업시간(하루/반나절/N시간)도 반영
+        job['duration_type']  = (request.form.get('duration_type') or '하루').strip()
+        job['duration_hours'] = (request.form.get('duration_hours') or '').strip() if job['duration_type'] == 'N시간' else ''
+
         save_json('jobs.json', jobs_db)
-        return redirect(url_for('view_jobs'))
+
+        # 목록 필터 유지해서 돌아가기 (edit_job.html에서 넣어준 filter_* 히든들 사용)
+        params = {}
+        for k, v in request.form.items():
+            if k.startswith('filter_') and v != '':
+                params[k[7:]] = v
+        return redirect(url_for('view_jobs', **params))
 
     return render_template(
         'edit_job.html',
@@ -607,6 +647,195 @@ def bulk_action():
     save_json('jobs.json', db)
     return redirect(url_for('view_jobs'))
 
+@app.route('/export_selected', methods=['POST'])
+@perm_required('manage_jobs')
+def export_selected():
+    users_db = load_json('users.json', {})
+    user = users_db.get(session['username'], {})
+    company = user.get('company', '')
+
+    # 선택 인덱스 수집
+    try:
+        selected = [int(x) for x in request.form.getlist('selected_jobs')]
+    except ValueError:
+        selected = []
+    if not selected:
+        return back_with_error("선택된 작업이 없습니다.")
+
+    db = load_json('jobs.json', {})
+    jobs = db.get(company, [])
+
+    rows = []
+    for idx in selected:
+        if 0 <= idx < len(jobs):
+            j = jobs[idx]
+            rows.append([
+                idx,
+                j.get('date',''),
+                j.get('time',''),
+                j.get('worker',''),
+                j.get('machine_name',''),
+                j.get('machine_number',''),
+                j.get('machine_alias',''),
+                (j.get('client_primary') or j.get('client','')),
+                j.get('client_tenant',''),
+                j.get('location',''),
+                j.get('status',''),
+                j.get('duration_type',''),
+                j.get('duration_hours',''),
+                int(j.get('amount_man') or 0),
+                'Y' if j.get('share_amount') else '',
+                j.get('outsource_type',''),
+                j.get('outsource_partner',''),
+                j.get('payment_status',''),
+                int(j.get('paid_amount_man') or 0),
+            ])
+
+    if not rows:
+        return back_with_error("선택된 작업이 없습니다.")
+
+    filename = f"jobs_selected_{_dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+    # Excel 한글깨짐 방지용 BOM
+    s = StringIO()
+    s.write('\ufeff')
+    writer = csv.writer(s)
+    writer.writerow([
+        'index','date','time','worker',
+        'machine_name','machine_number','machine_alias',
+        'client_primary','client_tenant','location',
+        'status','duration_type','duration_hours',
+        'amount_man','share_amount',
+        'outsource_type','outsource_partner',
+        'payment_status','paid_amount_man'
+    ])
+    writer.writerows(rows)
+    data = s.getvalue()
+
+    return Response(
+        data,
+        mimetype='text/csv; charset=utf-8',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+    )
+
+# ---------------------------
+# 선택 항목 XLSX 내보내기 (중복 방지: _v2)
+# ---------------------------
+@app.route('/export_selected_xlsx', methods=['POST'])
+@perm_required('manage_jobs')
+def export_selected_xlsx():
+    from io import BytesIO
+    import datetime as _dt
+    from urllib.parse import quote
+    from flask import Response
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Border, Side, Alignment, Font
+    except Exception:
+        # 목록 화면으로 돌아가며 안내
+        return back_with_error('view_jobs', "서버에 openpyxl 패키지가 없습니다. 가상환경에서 'pip install openpyxl' 후 다시 시도해 주세요.")
+
+    # 회사/선택 인덱스
+    users_db = load_json('users.json', {})
+    user = users_db.get(session['username'], {})
+    company = user.get('company', '')
+    try:
+        selected = [int(x) for x in request.form.getlist('selected_jobs')]
+    except ValueError:
+        selected = []
+    if not selected:
+        return back_with_error('view_jobs', "선택된 작업이 없습니다.")
+
+    jobs = load_json('jobs.json', {}).get(company, [])
+
+    # 워크북/시트/헤더(분담 삭제, 받은/제공 외주 분리, 컬럼 순서 지정)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "작업목록(선택)"
+    headers = [
+        "날짜","시간","기사","장비명","차량번호","별칭",
+        "원수급자","임차인","위치","상태","작업시간",
+        "받은 외주","제공 외주",
+        "지불상태","지불금액(만)","총금액(만)"
+    ]
+    ws.append(headers)
+
+    def to_worktime(d_type, d_hours):
+        d_type = (d_type or '').strip()
+        d_hours = str(d_hours or '').strip()
+        if d_type == '하루':
+            return '하루'
+        if d_type == '반나절':
+            return '반나절'
+        if d_type == 'N시간' and d_hours.isdigit():
+            return f"{int(d_hours)}시간"
+        return ''
+
+    for idx in selected:
+        if 0 <= idx < len(jobs):
+            j = jobs[idx]
+            # 받은/제공 외주 칸에 파트너 배치
+            ot = (j.get('outsource_type') or 'none').strip()
+            partner = j.get('outsource_partner', '') or ''
+            recv_col = partner if ot == 'received' else ''
+            give_col = partner if ot == 'given' else ''
+
+            amount = int(j.get('amount_man') or 0)
+            paid   = int(j.get('paid_amount_man') or 0)
+
+            ws.append([
+                j.get('date',''), j.get('time',''), j.get('worker',''),
+                j.get('machine_name',''), j.get('machine_number',''), j.get('machine_alias',''),
+                (j.get('client_primary') or j.get('client','')), j.get('client_tenant',''),
+                j.get('location',''), j.get('status',''),
+                to_worktime(j.get('duration_type'), j.get('duration_hours')),
+                recv_col, give_col,
+                j.get('payment_status',''), paid, amount
+            ])
+
+    # 테두리/정렬
+    thin   = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+    center = Alignment(horizontal='center', vertical='center')
+    left   = Alignment(horizontal='left',   vertical='center')
+
+    # 헤더 스타일
+    for c in ws[1]:
+        c.font = Font(bold=True)
+        c.alignment = center
+        c.border = thin
+
+    # 본문 스타일
+    for row in ws.iter_rows(min_row=2, max_row=ws.max_row, max_col=ws.max_column):
+        for c in row:
+            c.border = thin
+            # 텍스트 위주 컬럼은 좌정렬
+            if c.column_letter in ['D','E','F','G','H','I','L','M']:  # 장비/거래처/위치/외주 칼럼들
+                c.alignment = left
+            else:
+                c.alignment = center
+
+    # 열 너비: 글자수 기반 + 여백(+4), 최대 10칸까지 보여주고 여백으로 덜 빡빡하게
+    maxlen = {}
+    for row in ws.iter_rows(values_only=True):
+        for i, v in enumerate(row, start=1):
+            L = len(str(v)) if v is not None else 0
+            maxlen[i] = max(maxlen.get(i, 0), L)
+    for i, L in maxlen.items():
+        col = ws.cell(row=1, column=i).column_letter
+        ws.column_dimensions[col].width = min(L, 10) + 4   # ← 여백 넉넉(+4)
+
+    # 파일 응답 (한글 파일명 깨짐 방지)
+    bio = BytesIO()
+    wb.save(bio); bio.seek(0)
+    filename = f"작업목록_선택_{_dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    quoted = quote(filename)
+    return Response(
+        bio.getvalue(),
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f"attachment; filename={quoted}; filename*=UTF-8''{quoted}"
+        }
+    )
 # ---------------------------
 # 상태 토글 API
 # ---------------------------
@@ -1024,17 +1253,18 @@ def update_worker(username):
         return "보스 계정은 수정할 수 없습니다.", 403
 
     if request.method == 'POST':
-        name = request.form['name'].strip()
-        phone = request.form['phone'].strip()
+        name = (request.form.get('name') or '').strip()
+        phone = (request.form.get('phone') or '').strip()
         if name:  user['name'] = name
         if phone: user['phone'] = phone
         save_json('users.json', users_db)
 
         for w in workers_db.get(company, []):
-            if w['username'] == username:
+            if w.get('username') == username:
                 if name:  w['name'] = name
                 if phone: w['phone'] = phone
                 break
+        workers_db[company] = workers_db.get(company, [])
         save_json('workers.json', workers_db)
         return redirect('/manage_workers')
 
@@ -1109,9 +1339,11 @@ def company_info():
         elif new_company_name != company and new_company_name in companies:
             error = '이미 존재하는 회사명입니다.'
         else:
+            # 회사명 변경 시 기존 정보 보존하면서 안전하게 이동
             if new_company_name != company:
+                moved = companies.pop(company, {})
+                companies[new_company_name] = moved
                 users_db[username]['company'] = new_company_name
-                companies[new_company_name] = companies.pop(company)
                 company = new_company_name
 
             users_db[username]['phone'] = new_phone
@@ -1119,6 +1351,7 @@ def company_info():
                 users_db[username]['password'] = new_password
             save_json('users.json', users_db)
 
+            companies.setdefault(company, {})
             companies[company]['phone'] = new_phone
             companies[company]['code'] = new_company_code
             save_json('companies.json', companies)
@@ -1176,7 +1409,7 @@ def register_boss():
         }
         save_json('users.json', users)
 
-        # companies.json 저장 (여기가 핵심)
+        # companies.json 저장
         companies[company] = {"code": company_code, "phone": phone}
         save_json('companies.json', companies)
 
@@ -1214,7 +1447,6 @@ def _repair_companies_once():
 @app.route('/_debug_paths')
 def _debug_paths():
     # load_json/save_json이 사용하는 실제 경로 확인용
-    from pathlib import Path
     base = Path(__file__).resolve().parent
     data = base / "data"
     return f"BASE_DIR={base}\nDATA_DIR={data}\nusers.json={data/'users.json'}\ncompanies.json={data/'companies.json'}", 200, {"Content-Type":"text/plain; charset=utf-8"}
@@ -1332,7 +1564,7 @@ def register_worker():
     except Exception as e:
         import traceback
         return f"<h2>서버 오류 발생:<br>{e}</h2><pre>{traceback.format_exc()}</pre>"
-    
+
 @app.route('/register/worker/resolve_homonym', methods=['POST'])
 def resolve_homonym():
     # hidden 으로 넘어온 값들
@@ -1457,24 +1689,19 @@ def edit_worker():
     return render_template('edit_worker.html', user=user_info, back_endpoint=back_endpoint, back_label=back_label)
 
 # ---------------------------
-# 앱 실행
+# 앱 실행/디버그용
 # ---------------------------
-
 @app.route('/_peek_users')
 def _peek_users():
-    from flask import Response
-    import json as _json
     users = load_json('users.json', {})
-    # boss만 보기 좋게 필터
     bosses = {k:v for k,v in users.items() if (v.get('role') == 'boss')}
-    return Response(_json.dumps(bosses, ensure_ascii=False, indent=2), mimetype='application/json; charset=utf-8')
+    return Response(json.dumps(bosses, ensure_ascii=False, indent=2), mimetype='application/json; charset=utf-8')
 
 @app.route('/_peek_companies')
 def _peek_companies():
-    from flask import Response
-    import json as _json
-    return Response(_json.dumps(load_json('companies.json', {}), ensure_ascii=False, indent=2),
+    return Response(json.dumps(load_json('companies.json', {}), ensure_ascii=False, indent=2),
                     mimetype='application/json; charset=utf-8')
 
 if __name__ == '__main__':
+    # 기존 동작 유지
     app.run(debug=True, host='0.0.0.0', port=5000)

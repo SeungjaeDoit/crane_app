@@ -30,60 +30,100 @@
     "phone": "01019195949",
     "status": "active"
   },
-  "홍예크레인이케이": {
+  "서현크레인boss": {
+    "password": "cc0303",
+    "role": "boss",
+    "company": "서현크레인",
+    "phone": "01011111111",
+    "company_code": "111111",
+    "name": "사장님"
+  },
+  "서현크레인이케이": {
+    "password": "cc0303",
+    "role": "worker",
+    "company": "서현크레인",
+    "name": "이케이",
+    "phone": "01022222222",
+    "status": "active"
+  },
+  "홍예크레인김서현": {
     "password": "cc0303",
     "role": "worker",
     "company": "홍예크레인",
-    "name": "이케이",
-    "phone": "01033332222",
+    "name": "김서현",
+    "phone": "01059599595",
     "status": "active"
   },
-  "케이중기boss": {
-    "password": "cc0303",
-    "role": "boss",
-    "company": "케이중기",
-    "phone": "01054227135",
-    "company_code": "121212",
-    "name": ""
-  },
-  "쓰레기회사boss": {
-    "password": "cc0303",
-    "role": "boss",
-    "company": "쓰레기회사",
-    "phone": "01059292929",
-    "company_code": "321321",
-    "name": ""
-  },
-  "regitest01boss": {
-    "password": "cc0303",
-    "role": "boss",
-    "company": "regitest01",
-    "phone": "01000001111",
-    "company_code": "010101",
-    "name": "사장님"
-  },
-  "regitest01123": {
-    "password": "3333",
+  "홍예크레인왕서현": {
+    "password": "5252",
     "role": "worker",
-    "company": "regitest01",
-    "name": "123",
-    "phone": "3333333333",
+    "company": "홍예크레인",
+    "name": "왕서현",
+    "phone": "01055225252",
     "status": "active"
   },
-  "rtest01boss": {
-    "password": "cc0303",
-    "role": "boss",
-    "company": "rtest01",
-    "phone": "01077777777",
-    "company_code": "777777",
-    "name": "사장님"
+  "홍예크레인노시환": {
+    "password": "1322",
+    "role": "worker",
+    "company": "홍예크레인",
+    "name": "노시환",
+    "phone": "01053231322",
+    "status": "active"
   },
-  "rtest02boss": {
-    "password": "cc0303",
-    "role": "boss",
-    "company": "rtest02",
-    "phone": "01066666666",
-    "company_code": "666666",
-    "name": "사장님"
+  "홍예크레인채은성": {
+    "password": "2932",
+    "role": "worker",
+    "company": "홍예크레인",
+    "name": "채은성",
+    "phone": "01039292932",
+    "status": "active"
+  },
+  "홍예크레인문현빈": {
+    "password": "2203",
+    "role": "worker",
+    "company": "홍예크레인",
+    "name": "문현빈",
+    "phone": "01039492203",
+    "status": "active"
+  },
+  "홍예크레인정우주": {
+    "password": "3201",
+    "role": "worker",
+    "company": "홍예크레인",
+    "name": "정우주",
+    "phone": "01063032012",
+    "status": "active"
+  },
+  "홍예크레인김경문": {
+    "password": "3293",
+    "role": "worker",
+    "company": "홍예크레인",
+    "name": "김경문",
+    "phone": "01029393293",
+    "status": "active"
+  },
+  "홍예크레인한태양": {
+    "password": "9332",
+    "role": "worker",
+    "company": "홍예크레인",
+    "name": "한태양",
+    "phone": "01029399332",
+    "status": "active"
+  },
+  "홍예크레인정문철": {
+    "password": "1922",
+    "role": "worker",
+    "company": "홍예크레인",
+    "name": "정문철",
+    "phone": "01066311922",
+    "status": "active"
+  },
+  "홍예크레인전준우": {
+    "password": "9932",
+    "role": "worker",
+    "company": "홍예크레인",
+    "name": "전준우",
+    "phone": "01052579932",
+    "status": "active"
   }
 }
