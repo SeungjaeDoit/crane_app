@@ -1,0 +1,172 @@
+{
+  "홍예크레인": [
+    {
+      "id": "398332ba",
+      "date": "2025-08-29",
+      "category": "수입테스트",
+      "desc": "수입테스트",
+      "amount": 500000.0,
+      "created_at": "2025-08-17T06:35:28"
+    },
+    {
+      "id": "auto-1145c5d5967d37b4",
+      "auto_key": "auto-1145c5d5967d37b4",
+      "source": "auto_outsrc_given",
+      "date": "2025-04-29",
+      "category": "외주줬음",
+      "desc": "꼬질건설",
+      "amount": 0
+    },
+    {
+      "id": "auto-e27156a233a089e0",
+      "auto_key": "auto-e27156a233a089e0",
+      "source": "auto_outsrc_given",
+      "date": "2025-01-31",
+      "category": "외주줬음",
+      "desc": "꼬질건설",
+      "amount": 0
+    },
+    {
+      "id": "auto-38923d9a42ba18b7",
+      "auto_key": "auto-38923d9a42ba18b7",
+      "source": "auto_outsrc_given",
+      "date": "2025-04-06",
+      "category": "외주줬음",
+      "desc": "꼬질건설",
+      "amount": 0
+    },
+    {
+      "id": "auto-03fbaec6ed6c6eed",
+      "auto_key": "auto-03fbaec6ed6c6eed",
+      "source": "auto_outsrc_given",
+      "date": "2025-07-04",
+      "category": "외주줬음",
+      "desc": "백두장비",
+      "amount": 0
+    },
+    {
+      "id": "auto-62d9b42741df193a",
+      "auto_key": "auto-62d9b42741df193a",
+      "source": "auto_outsrc_given",
+      "date": "2025-05-14",
+      "category": "외주줬음",
+      "desc": "가나다크레인",
+      "amount": 0
+    },
+    {
+      "id": "auto-83360db9095c56a8",
+      "auto_key": "auto-83360db9095c56a8",
+      "source": "auto_outsrc_given",
+      "date": "2025-03-03",
+      "category": "외주줬음",
+      "desc": "하나크레인",
+      "amount": 0
+    },
+    {
+      "id": "auto-f541350ac40de873",
+      "auto_key": "auto-f541350ac40de873",
+      "source": "auto_outsrc_given",
+      "date": "2025-06-01",
+      "category": "외주줬음",
+      "desc": "가나다크레인",
+      "amount": 0
+    },
+    {
+      "id": "auto-2aaf5f20a20f5347",
+      "auto_key": "auto-2aaf5f20a20f5347",
+      "source": "auto_outsrc_given",
+      "date": "2025-07-07",
+      "category": "외주줬음",
+      "desc": "꼬질건설",
+      "amount": 0
+    },
+    {
+      "id": "auto-ce01c912f471a761",
+      "auto_key": "auto-ce01c912f471a761",
+      "source": "auto_outsrc_given",
+      "date": "2025-01-02",
+      "category": "외주줬음",
+      "desc": "한빛중기",
+      "amount": 0
+    },
+    {
+      "id": "auto-c7530a7df3fb046c",
+      "auto_key": "auto-c7530a7df3fb046c",
+      "source": "auto_outsrc_given",
+      "date": "2025-01-30",
+      "category": "외주줬음",
+      "desc": "한길중기",
+      "amount": 590000
+    },
+    {
+      "id": "auto-f6f7774dc53ccd6d",
+      "auto_key": "auto-f6f7774dc53ccd6d",
+      "source": "auto_outsrc_given",
+      "date": "2025-04-02",
+      "category": "외주줬음",
+      "desc": "하나크레인",
+      "amount": 450000
+    },
+    {
+      "id": "auto-66d3d3eabd217470",
+      "auto_key": "auto-66d3d3eabd217470",
+      "source": "auto_outsrc_given",
+      "date": "2025-04-03",
+      "category": "외주줬음",
+      "desc": "가나다크레인",
+      "amount": 450000
+    },
+    {
+      "id": "auto-76ee991387368f6f",
+      "auto_key": "auto-76ee991387368f6f",
+      "source": "auto_outsrc_given",
+      "date": "2025-07-21",
+      "category": "외주줬음",
+      "desc": "백두장비",
+      "amount": 720000
+    },
+    {
+      "id": "auto-c7b3c5eadf9c385e",
+      "auto_key": "auto-c7b3c5eadf9c385e",
+      "source": "auto_outsrc_given",
+      "date": "2025-05-14",
+      "category": "외주줬음",
+      "desc": "꼬질건설",
+      "amount": 1190000
+    },
+    {
+      "id": "auto-0e17085260ca324d",
+      "auto_key": "auto-0e17085260ca324d",
+      "source": "auto_outsrc_given",
+      "date": "2025-01-20",
+      "category": "외주줬음",
+      "desc": "가나다크레인",
+      "amount": 370000
+    },
+    {
+      "id": "2e2ae926",
+      "date": "2025-08-17",
+      "category": "테스트1",
+      "desc": "지테",
+      "amount": 500000.0,
+      "created_at": "2025-08-17 10:02:23"
+    },
+    {
+      "id": "136269d5",
+      "date": "2025-08-17",
+      "category": "지테1",
+      "desc": "지테1",
+      "amount": 700000.0,
+      "created_at": "2025-08-17 10:02:31"
+    },
+    {
+      "id": "01b9e0f3",
+      "date": "2025-08-19",
+      "category": "츄레라",
+      "desc": "웨이트운반",
+      "amount": 1000000.0,
+      "created_at": "2025-08-19 12:02:44"
+    }
+  ],
+  "": []
+}

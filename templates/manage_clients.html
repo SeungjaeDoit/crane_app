@@ -9,7 +9,7 @@
     .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 18px;margin:14px 0}
     label{font-weight:700;display:block;margin-top:12px}
     input[type="text"]{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-top:6px}
-    .row{display:flex;gap:10px;margin-top:12px}
+    .row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;align-items:center}
     .row .grow{flex:1}
     .btn{border:none;border-radius:8px;padding:10px 14px;font-size:14px;cursor:pointer}
     .btn-green{background:#22c55e;color:#fff}
@@ -22,6 +22,17 @@
 </head>
 <body>
   <h2>거래처 관리 (원수급자 / 임차인)</h2>
+
+  <!-- flash 메시지 -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="card" style="margin-top:-6px;">
+        {% for category, msg in messages %}
+          <div>{{ msg }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
 
   {% if request.args.get('from') == 'add_job' %}
     <p>
@@ -48,6 +59,19 @@
       <button class="btn btn-green" type="button" onclick="saveOwner()">저장</button>
       <button class="btn btn-red"   type="button" onclick="deleteOwner()">삭제</button>
       <button class="btn btn-ghost" type="button" onclick="document.getElementById('owner_input').value=''">지우기</button>
+
+      <!-- 미사용 삭제 (원수급자) -->
+      <form method="post" action="{{ url_for('clients_prune') }}" class="row" style="gap:8px;">
+        <input type="hidden" name="from" value="{{ request.args.get('from','') }}">
+        <input type="hidden" name="kind" value="primary">
+        <select name="days" class="grow" style="padding:8px;border:1px solid #d1d5db;border-radius:8px;">
+          <option value="30">30일</option>
+          <option value="90">90일</option>
+          <option value="180">180일</option>
+          <option value="360">360일</option>
+        </select>
+        <button class="btn btn-red" type="submit">미사용 삭제</button>
+      </form>
     </div>
     <div class="hint">입력값이 없으면 저장/삭제가 진행되지 않습니다. 이미 비슷한 이름이 있을 경우 저장 전에 합칠지 물어봅니다.</div>
 
@@ -74,6 +98,19 @@
       <button class="btn btn-green" type="button" onclick="saveTenant()">저장</button>
       <button class="btn btn-red"   type="button" onclick="deleteTenant()">삭제</button>
       <button class="btn btn-ghost" type="button" onclick="document.getElementById('tenant_input').value=''">지우기</button>
+
+      <!-- 미사용 삭제 (임차인) ※ kind=tenant 로 수정 -->
+      <form method="post" action="{{ url_for('clients_prune') }}" class="row" style="gap:8px;">
+        <input type="hidden" name="from" value="{{ request.args.get('from','') }}">
+        <input type="hidden" name="kind" value="tenant">
+        <select name="days" class="grow" style="padding:8px;border:1px solid #d1d5db;border-radius:8px;">
+          <option value="30">30일</option>
+          <option value="90">90일</option>
+          <option value="180">180일</option>
+          <option value="360">360일</option>
+        </select>
+        <button class="btn btn-red" type="submit">미사용 삭제</button>
+      </form>
     </div>
     <div class="hint">입력값이 없으면 저장/삭제가 진행되지 않습니다.</div>
 

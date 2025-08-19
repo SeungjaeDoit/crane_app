@@ -1,0 +1,174 @@
+{
+  "홍예크레인": [
+    {
+      "id": "auto-317ee880a983dec6",
+      "auto_key": "auto-317ee880a983dec6",
+      "source": "auto_outsrc_received",
+      "date": "2025-06-29",
+      "category": "외주받음",
+      "desc": "한빛중기",
+      "amount": 1030000
+    },
+    {
+      "id": "auto-f10770de0257940d",
+      "auto_key": "auto-f10770de0257940d",
+      "source": "auto_outsrc_received",
+      "date": "2025-05-18",
+      "category": "외주받음",
+      "desc": "꼬질건설",
+      "amount": 260000
+    },
+    {
+      "id": "auto-2106912fda75535c",
+      "auto_key": "auto-2106912fda75535c",
+      "source": "auto_outsrc_received",
+      "date": "2025-01-07",
+      "category": "외주받음",
+      "desc": "가나다크레인",
+      "amount": 990000
+    },
+    {
+      "id": "auto-42107033fd24d2f1",
+      "auto_key": "auto-42107033fd24d2f1",
+      "source": "auto_outsrc_received",
+      "date": "2025-02-18",
+      "category": "외주받음",
+      "desc": "한길중기",
+      "amount": 830000
+    },
+    {
+      "id": "auto-6392bf2426c69150",
+      "auto_key": "auto-6392bf2426c69150",
+      "source": "auto_outsrc_received",
+      "date": "2025-06-02",
+      "category": "외주받음",
+      "desc": "백두장비",
+      "amount": 230000
+    },
+    {
+      "id": "auto-07f35c1b816f067a",
+      "auto_key": "auto-07f35c1b816f067a",
+      "source": "auto_outsrc_received",
+      "date": "2025-02-22",
+      "category": "외주받음",
+      "desc": "하나크레인",
+      "amount": 740000
+    },
+    {
+      "id": "auto-13ca8c1f355bead1",
+      "auto_key": "auto-13ca8c1f355bead1",
+      "source": "auto_outsrc_received",
+      "date": "2025-03-22",
+      "category": "외주받음",
+      "desc": "가나다크레인",
+      "amount": 700000
+    },
+    {
+      "id": "auto-485bfe7e3890692b",
+      "auto_key": "auto-485bfe7e3890692b",
+      "source": "auto_outsrc_received",
+      "date": "2025-05-13",
+      "category": "외주받음",
+      "desc": "하나크레인",
+      "amount": 1040000
+    },
+    {
+      "id": "auto-96db3b19d36410e4",
+      "auto_key": "auto-96db3b19d36410e4",
+      "source": "auto_outsrc_received",
+      "date": "2025-02-28",
+      "category": "외주받음",
+      "desc": "한빛중기",
+      "amount": 580000
+    },
+    {
+      "id": "auto-a5ee2d3069a9d334",
+      "auto_key": "auto-a5ee2d3069a9d334",
+      "source": "auto_outsrc_received",
+      "date": "2025-05-22",
+      "category": "외주받음",
+      "desc": "정우중기",
+      "amount": 610000
+    },
+    {
+      "id": "auto-67d7261e74ed824d",
+      "auto_key": "auto-67d7261e74ed824d",
+      "source": "auto_outsrc_received",
+      "date": "2025-05-07",
+      "category": "외주받음",
+      "desc": "정우중기",
+      "amount": 790000
+    },
+    {
+      "id": "auto-11f8eaf8ffedd8bb",
+      "auto_key": "auto-11f8eaf8ffedd8bb",
+      "source": "auto_outsrc_received",
+      "date": "2025-03-22",
+      "category": "외주받음",
+      "desc": "백두장비",
+      "amount": 1020000
+    },
+    {
+      "id": "auto-13dd2e4711165048",
+      "auto_key": "auto-13dd2e4711165048",
+      "source": "auto_outsrc_received",
+      "date": "2025-06-10",
+      "category": "외주받음",
+      "desc": "가나다크레인",
+      "amount": 1080000
+    },
+    {
+      "id": "auto-3c668bb00cd188bb",
+      "auto_key": "auto-3c668bb00cd188bb",
+      "source": "auto_outsrc_received",
+      "date": "2025-04-16",
+      "category": "외주받음",
+      "desc": "정우중기",
+      "amount": 1130000
+    },
+    {
+      "id": "auto-ac01d935527fe23f",
+      "auto_key": "auto-ac01d935527fe23f",
+      "source": "auto_outsrc_received",
+      "date": "2025-01-29",
+      "category": "외주받음",
+      "desc": "한빛중기",
+      "amount": 1080000
+    },
+    {
+      "id": "auto-11dd482315a8e0e8",
+      "auto_key": "auto-11dd482315a8e0e8",
+      "source": "auto_outsrc_received",
+      "date": "2025-06-23",
+      "category": "외주받음",
+      "desc": "한길중기",
+      "amount": 900000
+    },
+    {
+      "id": "auto-23241423829bd544",
+      "auto_key": "auto-23241423829bd544",
+      "source": "auto_outsrc_received",
+      "date": "2025-03-25",
+      "category": "외주받음",
+      "desc": "정우중기",
+      "amount": 790000
+    },
+    {
+      "id": "1c4693bff6724786aa067e4200c7353b",
+      "date": "2025-08-17",
+      "category": "수익1",
+      "desc": "수익2",
+      "amount": 500000,
+      "created_at": "2025-08-17 10:02:46"
+    },
+    {
+      "id": "582b3648b99d420eace1a36212aa5cbc",
+      "date": "2025-01-01",
+      "category": "상여금",
+      "desc": "신년보너스",
+      "amount": 500000,
+      "created_at": "2025-08-17 10:52:02"
+    }
+  ],
+  "": []
+}

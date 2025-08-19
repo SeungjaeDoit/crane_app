@@ -22,6 +22,7 @@
     .tile.big{padding:18px 16px; font-size:17px;}
     .tile.full{grid-column:1 / -1;}
     .divider{height:1px; background:#e5e7eb; margin:16px 0;}
+
     /* 색상 버전들 */
     .t-indigo{background:#4338ca;}   .t-indigo:hover{background:#3730a3;}
     .t-sky{background:#0ea5e9;}      .t-sky:hover{background:#0284c7;}
@@ -31,6 +32,10 @@
     .t-teal{background:#14b8a6;}     .t-teal:hover{background:#0d9488;}
     .t-slate{background:#334155;}    .t-slate:hover{background:#1f2937;}
     .t-gray{background:#9ca3af;}     .t-gray:hover{background:#6b7280;}
+
+    /* 새 색상 (서류 버튼용) */
+    .t-green{background:#22c55e;}    .t-green:hover{background:#16a34a;}
+
     .icon{font-size:18px;}
     @media (max-width:640px){
       .wrap{margin:18px 10px; padding:20px;}
@@ -44,17 +49,22 @@
     <h1>{{ company_name or '' }} 사장님, 반갑습니다!</h1>
 
     <div class="grid">
-
-      <a class="tile t-red big" href="{{ url_for('add_job') }}"><span class="icon">📝</span>작업지시 등록</a>
+      <!-- 1행 -->
+      <a class="tile t-red big"  href="{{ url_for('add_job') }}"><span class="icon">📝</span>작업지시 등록</a>
       <a class="tile t-teal big" href="{{ url_for('view_jobs') }}"><span class="icon">📋</span>작업 목록 보기</a>
 
+      <!-- 2행 -->
       <a class="tile t-indigo" href="{{ url_for('add_worker') }}"><span class="icon">➕</span>기사 등록/관리</a>
-      <a class="tile t-sky" href="{{ url_for('manage_workers') }}"><span class="icon">👷</span>기사 관리</a>
+      <a class="tile t-sky"    href="{{ url_for('finance_dashboard') }}"><span class="icon">👷</span>매출/수입/지출 관리</a>
 
+      <!-- 3행 -->
       <a class="tile t-purple" href="{{ url_for('manage_machines') }}"><span class="icon">🛠️</span>장비 등록/관리</a>
-      <a class="tile t-amber" href="{{ url_for('manage_clients') }}"><span class="icon">🧾</span>거래처 관리</a>
+      <a class="tile t-amber"  href="{{ url_for('manage_clients') }}"><span class="icon">🧾</span>거래처 관리</a>
 
-      <a class="tile t-slate full" href="{{ url_for('company_info') }}"><span class="icon">🏢</span>회사정보 보기/수정</a>
+      <!-- 4행 (좌: 서류, 우: 회사정보) -->
+      <!-- * 'docs_home' 엔드포인트 이름은 프로젝트에 맞게 조정하세요 (예: docs, documents 등) -->
+      <a class="tile t-green" href="{{ url_for('docs_home') }}"><span class="icon">📄</span>서류 보내기/등록/관리</a>
+      <a class="tile t-slate" href="{{ url_for('company_info') }}"><span class="icon">🏢</span>회사정보 보기/수정</a>
     </div>
 
     <div class="divider"></div>

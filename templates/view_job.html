@@ -1,356 +1,157 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8" />
-  <title>전체 작업 목록</title>
-  <style>
-    :root{
-      --gap:12px; --radius:10px; --border:#e5e7eb; --bg:#f7f7f9; --muted:#6b7280;
-      --blue:#1e90ff; --green:#22c55e; --red:#ef4444;
-    }
-    body{
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,'맑은 고딕',sans-serif;
-      max-width:clamp(980px, 92vw, 1280px);
-      margin:36px auto; padding:0 16px; background:#fafafa;
-    }
-    h2{font-size:26px; font-weight:800; text-align:center; margin:0 0 18px;}
+{% extends "base.html" %}
+{% block title %}전체 작업 목록{% endblock %}
 
-    .btn{display:inline-flex; align-items:center; gap:6px; border:none; border-radius:8px; padding:10px 14px; font-size:14px; cursor:pointer; text-decoration:none;}
-    .btn-blue{background:var(--blue); color:#fff;}
-    .btn-ghost{background:#eef2f7; color:#334155;}
-    .btn-green{background:var(--green); color:#fff;}
-    .btn-red{background:var(--red); color:#fff;}
-    a.btn.chip{ background:#9ca3af; color:#fff; }
-    a.btn.chip.on{ background:#f59e0b; color:#fff; }
+{% block head %}
+<style>
+  .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin:8px 0}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .muted{color:#6b7280;font-size:12px}
 
-    /* ── 상단 검색: 가로 한 줄 ── */
-    .filters-row{
-      display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;
-      margin:8px 0 12px;
-    }
-    .filters-row input[type="text"],
-    .filters-row input[type="date"]{
-      height:36px; padding:0 12px; border:1px solid var(--border); border-radius:8px;
-      background:#fff; min-width:200px; font-size:14px;
-    }
-    .filters-row .btn{ height:36px; padding:0 14px; }
+  .btn{padding:8px 12px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .btn-primary{background:#111827;color:#fff;border-color:#111827}
+  .btn-green{background:#22c55e;color:#fff;border-color:#22c55e}
+  .btn-blue{background:#1e90ff;color:#fff;border-color:#1e90ff}
+  .btn-red{background:#ef4444;color:#fff;border-color:#ef4444}
 
-    /* 토글 버튼 줄 */
-    .calendar-wrap{ display:flex; justify-content:center; gap:10px; margin:10px 0 16px; }
+  .tab{display:inline-block;padding:6px 10px;border:1px solid #e5e7eb;border-radius:999px;background:#fff;color:#111827;text-decoration:none}
+  .tab.active{background:#111827;color:#fff;border-color:#111827}
 
-    /* 표/상세 */
-    .bulk{display:flex; gap:10px; align-items:center; margin: 6px 0 14px; flex-wrap:wrap;}
-    .hint{color:var(--muted); font-size:13px;}
-    .table-wrap{background:#fff; border-radius:var(--radius); border:1px solid var(--border); overflow-x:auto;}
-    table{width:100%; border-collapse:collapse; table-layout:fixed; min-width:960px;}
-    th,td{padding:clamp(8px, 1.2vw, 14px) 10px; text-align:center; border-bottom:1px solid var(--border);}
-    th{background:#f3f4f6; font-weight:700;}
-    tr:hover td{background:#fbfcff;}
-    .arrow{padding:8px 10px; border:1px solid var(--border); background:#fff; border-radius:8px; cursor:pointer;}
-    .status{font-weight:700;}
-    .done{color:#16a34a;} .todo{color:#334155;}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{width:100%;border-collapse:collapse;min-width:960px}
+  th,td{border-bottom:1px solid #f0f1f3;padding:8px;text-align:center}
+  thead th{font-size:16px;line-height:1.1;white-space:nowrap;padding:6px 8px} /* 한 줄 유지 */
+  tr:hover td{background:#fbfcff}
 
-    .detail-row{display:none;}
-    .detail{background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:14px; margin:8px; display:grid; grid-template-columns:1fr 1fr; gap:10px 18px; text-align:left;}
-    .detail-actions{grid-column:1 / -1; display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;}
+  .detail-row{display:none}
+  .detail{background:#f7f7f9;border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin:8px;display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;text-align:left}
+  .detail-actions{grid-column:1 / -1;display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
 
-    /* 기사/칩 */
-    .worker-name{display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-    .spare-badge{display:inline-block; margin-top:4px; padding:1px 6px; border-radius:8px; background:#e8f1ff; color:#1d4ed8; font-size:12px; font-weight:600;}
-    .price-chip,.badge-partial,.badge-unpaid{display:inline-block; margin-left:6px; padding:2px 6px; border-radius:8px; font-size:12px; vertical-align:middle;}
-    .price-missing{display:inline-block; margin-left:6px; padding:2px 6px; border-radius:8px; background:#fff1f2; color:#b91c1c; font-size:12px; vertical-align:middle;}
-    .badge-partial{ background:#fff7ed; color:#c2410c; }
-    .badge-unpaid { background:#fee2e2; color:#b91c1c; }
-    .tag-blue{display:inline-block; padding:2px 6px; border-radius:8px; background:#e6f0ff; color:#1d4ed8; font-size:12px; margin-left:6px;}
-    .tag-purple{display:inline-block; padding:2px 6px; border-radius:8px; background:#ede9fe; color:#6d28d9; font-size:12px; margin-left:6px;}
-    .ellipsis{display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-    .copy-link{font-size:12px; text-decoration:underline; cursor:pointer; color:#2563eb;}
+  .worker-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .spare-badge{display:inline-block;margin-top:4px;padding:1px 6px;border-radius:8px;background:#e8f1ff;color:#1d4ed8;font-size:12px;font-weight:600}
+  .price-chip,.badge-partial,.badge-unpaid{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:8px;font-size:12px;vertical-align:middle}
+  .price-missing{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:8px;background:#fff1f2;color:#b91c1c;font-size:12px;vertical-align:middle}
+  .badge-partial{background:#fff7ed;color:#c2410c}
+  .badge-unpaid{background:#fee2e2;color:#b91c1c}
+  .ellipsis{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .copy-link{font-size:12px;text-decoration:underline;cursor:pointer;color:#2563eb}
 
-    .pay-chips{display:flex; gap:6px; flex-wrap:wrap; justify-content:center;}
-    .pay-actions{margin-top:6px; display:flex; gap:6px; justify-content:center; flex-wrap:wrap;}
+  .chip{display:inline-block;padding:2px 6px;border-radius:999px;border:1px solid transparent;font-size:11px;vertical-align:middle}
+  .chip-red{color:#dc2626;border-color:#fecaca}  /* 진행중 */
+  .chip-black{color:#111827;border-color:#111827}/* 외주 */
 
-    @media (max-width:1200px){
-      .btn{padding:8px 12px; font-size:13px;}
-      .price-chip,.price-missing,.tag-blue,.badge-partial,.badge-unpaid{font-size:11px; padding:1px 5px;}
-    }
-    @media (max-width:980px){
-      .detail{grid-template-columns:1fr;}
-    }
-  </style>
-</head>
-<script>
-"use strict";
+  .outline{display:inline-block;border:1.5px solid #111827;border-radius:8px;padding:2px 6px}
+  .outs-chip{display:flex;justify-content:center;margin-top:4px} /* 외주 배지 하단 가운데 고정 */
+  .arrow{padding:8px 10px;border:1px solid #e5e7eb;background:#fff;border-radius:8px;cursor:pointer}
 
-(function(){
-  /* ===== 선택 상태 localStorage 보관 ===== */
-  function _key(){ return "jobs_selected_indices"; }
-  function getSel(){
-    try { return JSON.parse(localStorage.getItem(_key()) || "[]"); }
-    catch { return []; }
-  }
-  function setSel(list){
-    const norm = Array.from(new Set(list.map(v => parseInt(v,10)).filter(n => !isNaN(n))));
-    localStorage.setItem(_key(), JSON.stringify(norm));
-  }
-  function syncCheckboxesFromStorage(){
-    const selSet = new Set(getSel().map(String));
+  /* 관리 버튼 2×2 */
+  .mgr-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;min-width:180px}
 
-    // 개별 체크박스 동기화 + 변경 시 저장
-    document.querySelectorAll('input[name="selected_jobs"]').forEach(cb => {
-      cb.checked = selSet.has(cb.value);
-      cb.addEventListener("change", () => {
-        const cur = new Set(getSel());
-        const v = parseInt(cb.value,10);
-        if (cb.checked) cur.add(v); else cur.delete(v);
-        setSel([...cur]);
-      });
-    });
+  /* 모달 공통 */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:9998}
+  .modal{background:#fff;border-radius:14px;border:1px solid #e5e7eb;box-shadow:0 20px 50px rgba(0,0,0,.15);width:min(760px,94vw);max-height:86vh;overflow:auto}
+  .modal header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #eef0f3;font-weight:800}
+  .modal .body{padding:14px}
+  .modal .footer{padding:12px 14px;border-top:1px solid #eef0f3;display:flex;gap:8px;justify-content:flex-end}
 
-    // 전체 선택
-    const all = document.getElementById("selectAll");
-    if (all){
-      all.addEventListener("change", () => {
-        const want = all.checked;
-        const cur = new Set(getSel());
-        document.querySelectorAll('input[name="selected_jobs"]').forEach(cb => {
-          cb.checked = want;
-          const v = parseInt(cb.value,10);
-          if (want) cur.add(v); else cur.delete(v);
-        });
-        setSel([...cur]);
-      });
-    }
-  }
-  document.addEventListener("DOMContentLoaded", syncCheckboxesFromStorage);
-  window.addEventListener("pageshow",   syncCheckboxesFromStorage);
+  @media (max-width:980px){ .detail{grid-template-columns:1fr} }
+</style>
+{% endblock %}
 
-  /* ===== 선택값을 폼에 숨은필드로 붙이기 ===== */
-  function attachHiddenSelected(form){
-    form.querySelectorAll('input[type="hidden"][name="selected_jobs"]').forEach(el => el.remove());
-    getSel().forEach(v => {
-      const i = document.createElement("input");
-      i.type = "hidden"; i.name = "selected_jobs"; i.value = String(v);
-      form.appendChild(i);
-    });
-  }
+{% block content %}
 
-  /* ===== 일괄 처리(완료/삭제) ===== */
-  window.setBulk = function(action){
-    if (action === "delete" && !confirm("선택한 작업을 삭제하시겠습니까?")) return;
-    document.getElementById("bulkAction").value = action;
-    const form = document.getElementById("bulkForm");
-    attachHiddenSelected(form);
-    form.submit();
-  };
+<div class="row" style="justify-content:space-between;margin-bottom:8px;">
+  <h2 style="margin:0;">전체 작업 목록</h2>
+  <a class="tab" href="{{ url_for('dashboard') }}">메인메뉴로</a>
+</div>
 
-  /* ===== 선택 엑셀 받기 ===== */
-  window.exportSelected = function(){
-    const selected = getSel();
-    if (!selected.length){ alert("선택된 작업이 없습니다."); return; }
-
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "{{ url_for('export_selected_xlsx') }}";  // 서버 라우트 이름
-    form.style.display = "none";
-    document.body.appendChild(form);
-
-    attachHiddenSelected(form);
-    form.submit();
-    setTimeout(() => form.remove(), 1000);
-  };
-
-  /* ===== 상세보기(화살표) 토글 ===== */
-  document.addEventListener("click", (e) => {
-    const btn = e.target.closest(".arrow");
-    if (!btn) return;
-    const id = btn.dataset.target;
-    const row = document.getElementById(id);
-    if (!row) return;
-    const open = row.style.display === "table-row";
-    row.style.display = open ? "none" : "table-row";
-    btn.textContent = open ? "▼" : "▲";
-  });
-
-  /* ===== 결제/상태 토글 ===== */
-  function setPStatusBadge(el, status){
-    if(!el) return;
-    el.classList.remove("price-chip","price-missing","badge-partial","badge-unpaid");
-    if(status === "부분") el.classList.add("badge-partial");
-    else if(status === "미납") el.classList.add("badge-unpaid");
-    else if(status === "미설정") el.classList.add("price-missing");
-    else el.classList.add("price-chip");
-  }
-
-  function applyPaymentUI(idx, data){
-    const pstatusEl = document.getElementById("pstatus-"+idx);
-    const remainEl  = document.getElementById("remain-"+idx);
-    if(pstatusEl){ pstatusEl.textContent = data.payment_status || ""; setPStatusBadge(pstatusEl, data.payment_status || ""); }
-    if(remainEl){  remainEl.textContent  = "잔액 " + ((data.remaining ?? 0)) + "만"; }
-
-    const cell = document.getElementById("paycell-"+idx);
-    if(!cell) return;
-    const btns = cell.querySelectorAll("button");
-    btns.forEach(b=>{
-      if(b.textContent.includes("부분")) return; // 부분완납 버튼은 그대로
-      if(data.payment_status === "완납"){
-        b.classList.remove("btn-green"); b.classList.add("btn-red");
-        b.textContent = "완납취소";
-        b.setAttribute("onclick","toggleFullPaid(this,false)");
-      }else{
-        b.classList.remove("btn-red"); b.classList.add("btn-green");
-        b.textContent = "완납";
-        b.setAttribute("onclick","toggleFullPaid(this,true)");
-      }
-    });
-  }
-
-  window.toggleStatus = async function(btn){
-    const idx = btn.dataset.index;
-    const url = btn.dataset.url;
-    try{
-      const res = await fetch(url, { method:"POST", headers:{ "X-Requested-With":"XMLHttpRequest", "Accept":"application/json" }, credentials:"same-origin" });
-      if (res.redirected){ alert("로그인이 필요합니다."); location.href = res.url; return; }
-      const data = await res.json();
-      if (!res.ok || !data?.success){ alert("변경 실패: " + (data?.error || res.status)); return; }
-
-      const cell = document.getElementById("status-"+idx);
-      if(cell){
-        cell.textContent = data.status || "";
-        cell.classList.toggle("done", data.status === "완료");
-        cell.classList.toggle("todo", data.status !== "완료");
-      }
-      document.querySelectorAll(`button.status-toggle[data-index="${idx}"]`).forEach(b=>{
-        b.textContent = (data.status === "완료") ? "완료취소" : "완료";
-      });
-    }catch(err){ console.error(err); alert("네트워크 오류"); }
-  };
-
-  window.toggleFullPaid = async function(btn, makeFull){
-    const idx = btn.dataset.index;
-    const url = btn.dataset.url;
-    try{
-      const res = await fetch(url, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json", "Accept":"application/json" },
-        credentials:"same-origin",
-        body: JSON.stringify({ action: makeFull ? "full" : "unpay" })
-      });
-      if (res.redirected){ alert("로그인이 필요합니다."); location.href = res.url; return; }
-      const data = await res.json();
-      if (!res.ok || !data?.success){ alert("지불 상태 변경 실패: " + (data?.error || res.status)); return; }
-      applyPaymentUI(idx, data);
-    }catch(e){ console.error(e); alert("네트워크 오류"); }
-  };
-
-  window.partialPaid = async function(btn){
-    const idx = btn.dataset.index;
-    const url = btn.dataset.url;
-    const val = prompt("부분 완납 금액(만원) 입력");
-    if (val === null) return;
-    const n = parseInt(val, 10);
-    if (isNaN(n) || n < 0){ alert("숫자를 입력해 주세요."); return; }
-    try{
-      const res = await fetch(url, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json", "Accept":"application/json" },
-        credentials:"same-origin",
-        body: JSON.stringify({ action:"partial", amount_man:n })
-      });
-      if (res.redirected){ alert("로그인이 필요합니다."); location.href = res.url; return; }
-      const data = await res.json();
-      if (!res.ok || !data?.success){ alert("부분완납 실패: " + (data?.error || res.status)); return; }
-      applyPaymentUI(idx, data);
-    }catch(e){ console.error(e); alert("네트워크 오류"); }
-  };
-
-})();
-</script>
-<body data-company="{{ session.get('company','') }}">
-  <h2>전체 작업 목록</h2>
-
-  <!-- 검색/필터: 가로 한 줄 -->
-  <form method="get" class="filters-row">
-    <input type="text" name="worker" placeholder="기사명"
-           value="{{ request.args.get('worker','') }}" aria-label="기사명">
-
-    <input list="owners_datalist" type="text" name="owner" placeholder="원수급자"
-           value="{{ q_owner or request.args.get('owner','') }}" aria-label="원수급자">
-    <datalist id="owners_datalist">
-      {% for o in owners %}<option value="{{ o }}"></option>{% endfor %}
-    </datalist>
-
-    <input list="tenants_datalist" type="text" name="tenant" placeholder="임차인"
-           value="{{ q_tenant or request.args.get('tenant','') }}" aria-label="임차인">
-    <datalist id="tenants_datalist">
-      {% for t in tenants %}<option value="{{ t }}"></option>{% endfor %}
-    </datalist>
-
-    <!-- 날짜 범위 -->
-<input type="date" name="date_from" value="{{ request.args.get('date_from','') }}" aria-label="시작일">
-<span>~</span>
-<input type="date" name="date_to"   value="{{ request.args.get('date_to','') }}"   aria-label="종료일">
-
-
+<!-- 페이지당 개수: 변경 즉시 적용 -->
+<div class="card">
+  <form id="perPageForm" method="get" class="row" style="justify-content:flex-end;">
+    <input type="hidden" name="worker" value="{{ request.args.get('worker','') }}">
+    <input type="hidden" name="owner"  value="{{ q_owner or request.args.get('owner','') }}">
+    <input type="hidden" name="tenant" value="{{ q_tenant or request.args.get('tenant','') }}">
+    <input type="hidden" name="date_from" value="{{ request.args.get('date_from','') }}">
+    <input type="hidden" name="date_to"   value="{{ request.args.get('date_to','') }}">
     {% if spare  == '1' %}<input type="hidden" name="spare"  value="1">{% endif %}
     {% if outsrc == '1' %}<input type="hidden" name="outsrc" value="1">{% endif %}
-    {% if overdue== '1' %}<input type="hidden" name="overdue" value="1">{% endif %}
-    {% if dues   == '1' %}<input type="hidden" name="dues"    value="1">{% endif %}
-
-    <button type="submit" class="btn btn-blue">검색</button>
-    <a href="{{ url_for('view_jobs') }}" class="btn btn-ghost">초기화</a>
+    <input type="hidden" name="status" value="{{ request.args.get('status', status_filter or '') }}">
+    <input type="hidden" name="pay"    value="{{ request.args.get('pay',    pay_filter    or '') }}">
+    <input type="hidden" name="page" value="1">
+    {% set per = request.args.get('per_page', per_page if per_page is defined else '20') %}
+    <select name="per_page" id="perSelect" onchange="document.getElementById('perPageForm').submit()" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;">
+      <option value="20"  {% if per|string == '20' %}selected{% endif %}>20개</option>
+      <option value="100" {% if per|string == '100' %}selected{% endif %}>100개</option>
+    </select>
   </form>
+</div>
 
-  <!-- 캘린더 & 토글 버튼 -->
-  <div class="calendar-wrap">
-    <a href="{{ url_for('calendar_view') }}" class="btn btn-green">📅 캘린더 보기</a>
+<!-- 검색/필터 -->
+<div class="card">
+  <form id="filterForm" method="get" class="row" style="gap:8px;align-items:center;">
+    <input type="text" name="worker" placeholder="기사명"
+           value="{{ request.args.get('worker','') }}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;min-width:160px;">
 
-    {% if overdue == '1' %}
-      <a href="{{ overdue_off_url }}" class="btn btn-blue">이전으로</a>
-    {% else %}
-      <a href="{{ overdue_on_url }}" class="btn btn-blue">진행중인 작업만</a>
-    {% endif %}
+    <input list="owners_datalist" type="text" name="owner" placeholder="원수급자"
+           value="{{ q_owner or request.args.get('owner','') }}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;min-width:160px;">
+    <datalist id="owners_datalist">{% for o in owners %}<option value="{{ o }}"></option>{% endfor %}</datalist>
 
-    {% if dues == '1' %}
-      <a href="{{ dues_off_url }}" class="btn btn-red">이전으로</a>
-    {% else %}
-      <a href="{{ dues_on_url }}" class="btn btn-red">미납된 작업보기</a>
-    {% endif %}
+    <input list="tenants_datalist" type="text" name="tenant" placeholder="임차인"
+           value="{{ q_tenant or request.args.get('tenant','') }}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;min-width:160px;">
+    <datalist id="tenants_datalist">{% for t in tenants %}<option value="{{ t }}"></option>{% endfor %}</datalist>
 
-    {% if spare == '1' %}
-      <a href="{{ spare_off_url }}" class="btn chip on">이전으로</a>
-    {% else %}
-      <a href="{{ spare_on_url }}" class="btn chip">스페어만</a>
-    {% endif %}
+    <input type="date" name="date_from" value="{{ request.args.get('date_from','') }}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;">
+    <span>~</span>
+    <input type="date" name="date_to"   value="{{ request.args.get('date_to','') }}"   style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;">
 
-    {% if outsrc == '1' %}
-      <a href="{{ outsrc_off_url }}" class="btn chip on">이전으로</a>
-    {% else %}
-      <a href="{{ outsrc_on_url }}" class="btn chip">외주작업만</a>
-    {% endif %}
+    <!-- 페이지/개수 유지 -->
+    <input type="hidden" name="page" value="{{ page if page is defined else 1 }}">
+    <input type="hidden" name="per_page" value="{{ per }}">
+
+    <!-- 필터 숨은필드(버튼 토글용) -->
+    <input type="hidden" id="hid_status" name="status" value="{{ request.args.get('status','') }}">
+    <input type="hidden" id="hid_pay"    name="pay"    value="{{ request.args.get('pay','') }}">
+    <input type="hidden" id="hid_spare"  name="spare"  value="{{ spare or request.args.get('spare','') }}">
+    <input type="hidden" id="hid_outsrc" name="outsrc" value="{{ outsrc or request.args.get('outsrc','') }}">
+
+    <button type="submit" class="btn btn-primary">검색</button>
+    <a href="{{ url_for('view_jobs') }}" class="btn">초기화</a>
+
+    <!-- ▼ 필터 버튼 6개 (버튼 → JS로 토글 후 submit) -->
+    <div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap;">
+      <button type="button" class="tab {{ 'active' if (spare=='1') else '' }}"  onclick="toggleChip('spare')">스페어만</button>
+      <button type="button" class="tab {{ 'active' if (outsrc=='1') else '' }}" onclick="toggleChip('outsrc')">외주만</button>
+      <button type="button" class="tab {{ 'active' if request.args.get('status')=='pending' else '' }}" onclick="setStatus('pending')">진행중만</button>
+      <button type="button" class="tab {{ 'active' if request.args.get('status')=='done'    else '' }}" onclick="setStatus('done')">완료만</button>
+      <button type="button" class="tab {{ 'active' if request.args.get('pay')=='unpaid' else '' }}" onclick="setPay('unpaid')">미납만</button>
+      <button type="button" class="tab {{ 'active' if request.args.get('pay')=='paid'   else '' }}" onclick="setPay('paid')">납부완료만</button>
+    </div>
+  </form>
+</div>
+
+<!-- (예전 필터 버튼 자리) 엑셀 받기만 -->
+<div class="card">
+  <div class="row" style="justify-content:flex-end;">
+    <button type="button" class="btn" onclick="window.openExcelModal()">엑셀 받기</button>
   </div>
+</div>
 
-  <!-- 일괄 처리 -->
+<!-- 목록 + 일괄처리 -->
+<div class="card">
   <form id="bulkForm" method="post" action="{{ url_for('bulk_action') }}">
     <input type="hidden" name="action" id="bulkAction" value="">
-    <div class="bulk">
-      <button type="button" class="btn btn-green" onclick="setBulk('complete')">선택 완료</button>
-      <button type="button" class="btn btn-red"   onclick="setBulk('delete')">선택 삭제</button>
-      <button type="button" class="btn btn-ghost" onclick="exportSelected()">선택 엑셀받기</button>
-      <button type="button" class="btn btn-ghost" onclick="clearSelection()">선택 해제</button>
-      <span class="hint">체크한 항목에만 적용됩니다. (검색/필터 변경 시에도 선택 유지)</span>
+    <div class="row">
+      <button type="button" class="btn btn-green" onclick="window.setBulk('complete')">선택 완료</button>
+      <button type="button" class="btn btn-red"   onclick="window.setBulk('delete')">선택 삭제</button>
+      <button type="button" class="btn"           onclick="window.clearSelection()">선택 해제</button>
+      <span class="muted">* 상단 체크박스로 필터 결과 전체 선택/해제</span>
     </div>
 
     <div class="table-wrap">
       {% if jobs and jobs|length>0 %}
       <table>
         <colgroup>
-          <col style="width:4%;">
-          <col style="width:11%;">
-          <col style="width:12%;">
-          <col style="width:21%;">
-          <col style="width:22%;">
-          <col style="width:18%;">
-          <col style="width:12%;">
+          <col style="width:4%"><col style="width:15%"><col style="width:14%">
+          <col style="width:20%"><col style="width:25%"><col style="width:14%"><col style="width:16%">
         </colgroup>
         <thead>
           <tr>
@@ -358,7 +159,7 @@
             <th>날짜</th>
             <th>기사</th>
             <th>장비(명/차량번호)</th>
-            <th>거래처 / 금액</th>
+            <th>원수급자/임차인/금액</th>
             <th>지불 상태</th>
             <th>관리</th>
           </tr>
@@ -370,9 +171,15 @@
           {% set malias = job.machine_alias %}
           {% set myear  = job.machine_year %}
           {% set amt = (job.amount_man if job.amount_man is defined else 0) | int %}
+          {% set ot = job.outsource_type or 'none' %}
+          {% set is_todo = (job.status != '완료') %}
           <tr>
             <td><input type="checkbox" name="selected_jobs" value="{{ job._idx }}"></td>
-            <td>{{ job.date }}</td>
+
+            <td style="text-align:left;">
+              <span>{{ job.date }}</span>
+              <span id="todo-{{ job._idx }}" class="chip chip-red" style="{% if not is_todo %}display:none{% endif %}">진행중</span>
+            </td>
 
             <td>
               {% set w = job.worker or '-' %}
@@ -380,32 +187,36 @@
               {% if job.is_spare %}<span class="spare-badge">(스페어)</span>{% endif %}
             </td>
 
-            <td>
-              <span class="ellipsis" title="{{ (mname or '-') ~ ((' / ' ~ mnum) if mnum else '') }}">
-                {{ mname or '-' }}{% if mnum %} / {{ mnum }}{% endif %}
-              </span>
+            <td style="text-align:left;">
+              <div class="{{ '' if (ot=='none' or ot=='received') else 'outline' }}">
+                <span class="ellipsis" title="{{ (mname or '-') ~ ((' / ' ~ mnum) if mnum else '') }}">
+                  {{ mname or '-' }}{% if mnum %} / {{ mnum }}{% endif %}
+                </span>
+                {% if malias %}<span class="muted"> / {{ malias }}</span>{% endif %}
+                {% if myear %}<span class="muted"> / {{ myear }}</span>{% endif %}
+              </div>
+              {% if ot != 'none' and ot != 'received' %}
+                <div class="outs-chip"><span class="chip chip-black">외주줬음</span></div>
+              {% endif %}
             </td>
 
-            <td>
-              {% set owner  = job.client_primary or job.client or '-' %}
-              {% set tenant = job.client_tenant or '' %}
-
-              {% if tenant and tenant != owner %}
-                <span class="ellipsis" title="{{ owner }} / {{ tenant }}">{{ owner }} / {{ tenant }}</span>
-              {% else %}
-                <span class="ellipsis" title="{{ owner }}">{{ owner }}</span>
-              {% endif %}
-
-              {% if amt > 0 %}
-                <span class="price-chip" title="{{ amt }}만">₩{{ amt }}만</span>
-              {% else %}
-                <span class="price-missing">금액설정 X</span>
-              {% endif %}
-
-              {% set ot = job.outsource_type or 'none' %}
-              {% if ot != 'none' %}
-                {% set tagclass = 'tag-blue' if ot=='received' else 'tag-purple' %}
-                <span class="{{ tagclass }}" title="{{ job.outsource_partner }} ({{ '받음' if ot=='received' else '줬음' }})">외주</span>
+            <td style="text-align:left;">
+              <div class="{{ 'outline' if ot=='received' else '' }}">
+                {% set owner  = job.client_primary or job.client or '-' %}
+                {% set tenant = job.client_tenant or '' %}
+                {% if tenant and tenant != owner %}
+                  <span class="ellipsis" title="{{ owner }} / {{ tenant }}">{{ owner }} / {{ tenant }}</span>
+                {% else %}
+                  <span class="ellipsis" title="{{ owner }}">{{ owner }}</span>
+                {% endif %}
+                {% if amt > 0 %}
+                  <span class="price-chip" title="{{ amt }}만">₩{{ amt }}만</span>
+                {% else %}
+                  <span class="price-missing">금액설정 X</span>
+                {% endif %}
+              </div>
+              {% if ot == 'received' %}
+                <div class="outs-chip"><span class="chip chip-black">외주받음</span></div>
               {% endif %}
             </td>
 
@@ -417,91 +228,61 @@
                                 or ('미설정' if amount <= 0
                                     else ('완납' if paid >= amount
                                           else ('미납' if paid <= 0 else '부분'))) %}
-              <div class="pay-chips">
+              <div class="row" style="justify-content:center;gap:6px;flex-wrap:wrap;">
                 {% if amount > 0 %}
                   <span class="price-chip">총 ₩{{ amount }}만</span>
                   <span class="price-chip" id="remain-{{ job._idx }}">잔액 {{ remaining if remaining>0 else 0 }}만</span>
-
                   {% set pclass = 'price-chip' %}
-                  {% if pstatus == '부분' %}{% set pclass = 'badge-partial' %}
-                  {% elif pstatus == '미납' %}{% set pclass = 'badge-unpaid' %}
-                  {% elif pstatus == '미설정' %}{% set pclass = 'price-missing' %}{% endif %}
+                  {% if pstatus == '부분' %}{% set pclass = 'badge-partial' %}{% elif pstatus == '미납' %}{% set pclass = 'badge-unpaid' %}{% elif pstatus == '미설정' %}{% set pclass = 'price-missing' %}{% endif %}
                   <span class="{{ pclass }}" id="pstatus-{{ job._idx }}">{{ pstatus }}</span>
                 {% else %}
                   <span class="price-missing" id="pstatus-{{ job._idx }}">금액 미설정</span>
                 {% endif %}
               </div>
-
-              {% if amount > 0 %}
-              <div class="pay-actions">
-                {% if pstatus == '완납' %}
-                  <button type="button" class="btn btn-red"
-                          data-index="{{ job._idx }}"
-                          data-url="{{ url_for('payment_api', job_index=job._idx) }}"
-                          onclick="toggleFullPaid(this, false)">완납취소</button>
-                {% else %}
-                  <button type="button" class="btn btn-green"
-                          data-index="{{ job._idx }}"
-                          data-url="{{ url_for('payment_api', job_index=job._idx) }}"
-                          onclick="toggleFullPaid(this, true)">완납</button>
-                {% endif %}
-                <button type="button" class="btn btn-ghost"
-                        data-index="{{ job._idx }}"
-                        data-url="{{ url_for('payment_api', job_index=job._idx) }}"
-                        onclick="partialPaid(this)">부분완납</button>
-              </div>
-              {% endif %}
             </td>
 
-            <td style="display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap;">
-              <span id="status-{{ job._idx }}" class="status {{ 'done' if job.status=='완료' else 'todo' }}">
-                {{ job.status or '진행중' }}
-              </span>
+            <td>
+              <div class="mgr-grid">
+                {% set is_full = (pstatus == '완납') %}
+                <button id="btn-full-{{ job._idx }}"
+                        type="button"
+                        class="btn {{ 'btn-red' if is_full else 'btn-green' }}"
+                        data-index="{{ job._idx }}"
+                        data-url="{{ url_for('payment_api', job_index=job._idx) }}"
+                        onclick="window.toggleFullPaid(this, {{ 'false' if is_full else 'true' }})">
+                  {{ '완납취소' if is_full else '완납' }}
+                </button>
 
-              <button type="button" class="arrow" data-target="d-{{ loop.index0 }}">▼</button>
+                <button type="button" class="btn"
+                        data-index="{{ job._idx }}"
+                        data-url="{{ url_for('payment_api', job_index=job._idx) }}"
+                        onclick="window.partialPaid(this)">부분완납</button>
 
-              <button type="button" class="btn btn-ghost status-toggle"
-                      data-index="{{ job._idx }}"
-                      data-url="{{ url_for('toggle_complete_api', job_index=job._idx) }}"
-                      onclick="toggleStatus(this)">
-                {% if job.status=='완료' %}완료취소{% else %}완료{% endif %}
-              </button>
+                <button type="button" class="btn"
+                        data-index="{{ job._idx }}"
+                        data-url="{{ url_for('toggle_complete_api', job_index=job._idx) }}"
+                        onclick="window.toggleStatus(this)">{% if job.status=='완료' %}완료취소{% else %}작업 완료{% endif %}</button>
+
+                <button type="button" class="arrow" onclick="window.toggleDetail('d-{{ loop.index0 }}', this)">▼</button>
+              </div>
             </td>
           </tr>
 
           <tr id="d-{{ loop.index0 }}" class="detail-row">
             <td colspan="7">
               <div class="detail">
-                <div>
-                  <b>장비:</b>
-                  {{ mname or '-' }}{% if mnum %} / {{ mnum }}{% endif %}
-                  {% if malias %} / <span style="color:#6b7280;">{{ malias }}</span>{% endif %}
-                  {% if myear  %} / <span style="color:#6b7280;">{{ myear }}</span>{% endif %}
-                </div>
-                <div>
-                  <b>위치:</b>
-                  {{ job.location or '-' }}
-                  {% if job.location %}
-                    <span class="copy-link" onclick="copyToClipboard(`{{ (job.location or '')|replace('`','\\`') }}`)">복사</span>
-                  {% endif %}
-                </div>
+                <div><b>장비:</b> {{ mname or '-' }}{% if mnum %} / {{ mnum }}{% endif %}{% if malias %} / <span class="muted">{{ malias }}</span>{% endif %}{% if myear %} / <span class="muted">{{ myear }}</span>{% endif %}</div>
+                <div><b>위치:</b> {{ job.location or '-' }} {% if job.location %}<span class="copy-link" onclick="window.copyToClipboard(`{{ (job.location or '')|replace('`','\\`') }}`)">복사</span>{% endif %}</div>
                 <div style="grid-column:1 / -1;"><b>요청사항:</b> {{ job.note or '-' }}</div>
                 <div><b>발주/임차:</b> {{ owner }}{% if tenant %} / {{ tenant }}{% endif %}</div>
-                <div><b>외주내역:</b>
-                  {% set ot = job.outsource_type or 'none' %}
-                  {% if ot != 'none' %}
-                    {{ job.outsource_partner or '-' }} ({{ '받음' if ot=='received' else '줬음' }})
-                  {% else %}-{% endif %}
-                </div>
+                <div><b>외주내역:</b> {% if ot != 'none' %}{{ job.outsource_partner or '-' }} ({{ '받음' if ot=='received' else '줬음' }}){% else %}-{% endif %}</div>
                 <div class="detail-actions">
                   <a href="{{ url_for('edit_job', job_index=job._idx) }}" class="btn btn-blue">수정</a>
-                  <a href="{{ url_for('delete_job', job_index=job._idx) }}" class="btn btn-red" onclick="return confirm('삭제하시겠습니까?');">삭제</a>
-                  <button type="button" class="btn btn-green status-toggle"
-                          data-index="{{ job._idx }}"
-                          data-url="{{ url_for('toggle_complete_api', job_index=job._idx) }}"
-                          onclick="toggleStatus(this)">
-                    {% if job.status=='완료' %}완료취소{% else %}완료{% endif %}
-                  </button>
+
+                  <form method="post" action="{{ url_for('delete_job', job_index=job._idx) }}" onsubmit="return confirm('삭제하시겠습니까?');" style="display:inline;">
+                    {{ csrf_token() if csrf_token }}
+                    <button type="submit" class="btn btn-red">삭제</button>
+                  </form>
                 </div>
               </div>
             </td>
@@ -510,15 +291,222 @@
         </tbody>
       </table>
       {% else %}
-        <div style="padding:24px; text-align:center;">등록된 작업이 없습니다.</div>
+        <div style="padding:24px;text-align:center;">등록된 작업이 없습니다.</div>
       {% endif %}
     </div>
   </form>
+</div>
 
-  <div style="display:flex; justify-content:center; margin:18px 0;">
-    <form action="{{ url_for('dashboard') }}">
-        <button type="submit" style="font-size: 16px;">🏠 메인화면으로 돌아가기</button>
-    </form>
+{% if pages and pages > 1 %}
+<div class="card" style="text-align:center">
+  <div class="row" style="justify-content:center;">
+    <button class="btn" onclick="window.goPage({{ (page-1) if page>1 else 1 }})" {% if page<=1 %}disabled{% endif %}>이전</button>
+    <span class="muted">
+      {{ ((per|int)*(page-1)+1) if total_count>0 else 0 }} -
+      {{ ((per|int)*(page-1) + (jobs|length)) if total_count>0 else 0 }}
+      / {{ total_count }} ({{ page }}/{{ pages }})
+    </span>
+    <button class="btn" onclick="window.goPage({{ (page+1) if page<pages else pages }})" {% if page>=pages %}disabled{% endif %}>다음</button>
   </div>
-</body>
-</html>
+</div>
+{% endif %}
+
+<!-- ===== 엑셀 모달 ===== -->
+<div id="excelBackdrop" class="modal-backdrop">
+  <div id="excelModal" class="modal" role="dialog" aria-modal="true">
+    <header>엑셀로 내보내기 <button class="btn" onclick="window.closeExcelModal()">닫기</button></header>
+    <div class="body">
+      <div class="row">
+        <label><input type="radio" name="rows_scope" id="excelScopeSelected"> 수동 선택만</label>
+        <label style="margin-left:8px;"><input type="radio" name="rows_scope" id="excelScopeAll" checked> 모든 페이지 전체 (<b id="excelCountAll">0</b>개)</label>
+        <span class="muted">선택됨: <b id="excelCountSelected">0</b>개</span>
+      </div>
+
+      {% set default_cols = ['date','owner','tenant','machine_name','machine_number','worker','amount_full','payment_status'] %}
+      <form id="excelForm" class="row" style="gap:6px;flex-wrap:wrap;">
+        {% set all_cols = [
+          ('date','날짜'), ('owner','원수급자'), ('tenant','임차인'),
+          ('machine_name','장비명'), ('machine_number','차량번호'),
+          ('machine_alias','별칭'), ('worker','기사'),
+          ('amount_full','금액'), ('payment_status','지불상태'),
+          ('remaining_full','잔액'), ('status','작업상태'),
+          ('location','위치'), ('note','요청사항'),
+          ('outsource_recv','외주받음'), ('outsource_give','외주줬음'),
+          ('spare','스페어')
+        ] %}
+        {% for col, label in all_cols %}
+          <label class="tab"><input type="checkbox" name="cols" value="{{ col }}" {% if col in default_cols %}checked{% endif %}> {{ label }}</label>
+        {% endfor %}
+      </form>
+    </div>
+    <div class="footer">
+      <button class="btn" type="button" onclick="window.closeExcelModal()">취소</button>
+      <button id="excelDownloadBtn" class="btn btn-primary" type="button" onclick="window.downloadExcel()">다운로드</button>
+    </div>
+  </div>
+</div>
+
+<script>window.ALL_JOB_IDS = {{ all_ids|default([])|tojson|safe }};</script>
+{% endblock %}
+
+{% block scripts %}
+<script>
+"use strict";
+
+/* ===== 유틸 ===== */
+window.copyToClipboard = async (t)=>{ try{ await navigator.clipboard.writeText(t||''); alert('복사되었습니다.'); }catch{ alert('복사 실패'); } };
+window.toggleDetail = function(id,btn){ const row=document.getElementById(id); if(!row) return; const open=row.style.display==='table-row'; row.style.display=open?'none':'table-row'; if(btn) btn.textContent=open?'▼':'▲'; };
+window.goPage = function(p){ const f=document.getElementById('filterForm'); f.page.value=p; f.submit(); };
+
+/* ===== 검색줄 토글 버튼 ===== */
+function submitFilter(){ const f=document.getElementById('filterForm'); f.page.value=1; f.submit(); }
+window.setStatus = function(v){ const hid=document.getElementById('hid_status'); hid.value=(hid.value===v)?'':v; submitFilter(); };
+window.setPay    = function(v){ const hid=document.getElementById('hid_pay');    hid.value=(hid.value===v)?'':v; submitFilter(); };
+window.toggleChip= function(kind){
+  const id = (kind==='spare')?'hid_spare':'hid_outsrc';
+  const hid=document.getElementById(id); hid.value=(hid.value==='1')?'':'1'; submitFilter();
+};
+
+/* ===== 선택 상태 ===== */
+const ALL_IDS = Array.isArray(window.ALL_JOB_IDS) ? window.ALL_JOB_IDS.slice() : [];
+const KEY="jobs_selected_indices";
+const getSel = ()=>{ try{return JSON.parse(localStorage.getItem(KEY)||"[]");}catch{return[];} };
+const setSel = (arr)=>localStorage.setItem(KEY, JSON.stringify(Array.from(new Set(arr.map(v=>parseInt(v,10)).filter(n=>!isNaN(n))))));
+
+function syncCheckboxes(){
+  const set = new Set(getSel().map(String));
+  document.querySelectorAll('input[name="selected_jobs"]').forEach(cb=>{
+    cb.checked = set.has(cb.value);
+    cb.onchange = ()=>{
+      const cur=new Set(getSel()); const v=parseInt(cb.value,10);
+      if(cb.checked) cur.add(v); else cur.delete(v);
+      setSel([...cur]); refreshExcelCounts(); syncSelectAllVisual();
+    };
+  });
+  const all = document.getElementById('selectAll');
+  if(all){
+    all.checked = (getSel().length===ALL_IDS.length && ALL_IDS.length>0);
+    all.onchange = ()=>{
+      const want = all.checked;
+      setSel(want ? ALL_IDS.slice() : []);
+      document.querySelectorAll('input[name="selected_jobs"]').forEach(cb=>cb.checked=want);
+      refreshExcelCounts();
+    };
+  }
+}
+function syncSelectAllVisual(){ const all=document.getElementById('selectAll'); if(all){ all.checked=(getSel().length===ALL_IDS.length && ALL_IDS.length>0); } }
+function refreshExcelCounts(){
+  document.getElementById('excelCountSelected')?.replaceChildren(document.createTextNode(String(getSel().length)));
+  document.getElementById('excelCountAll')?.replaceChildren(document.createTextNode(String(ALL_IDS.length)));
+}
+document.addEventListener('DOMContentLoaded', ()=>{ syncCheckboxes(); refreshExcelCounts(); });
+window.addEventListener('pageshow', ()=>{ syncCheckboxes(); refreshExcelCounts(); });
+
+window.clearSelection = function(){
+  setSel([]); document.querySelectorAll('input[name="selected_jobs"]').forEach(cb=>cb.checked=false);
+  const all=document.getElementById('selectAll'); if(all) all.checked=false;
+  alert('선택이 모두 해제되었습니다.');
+  refreshExcelCounts();
+};
+
+function attachHiddenSelected(form, ids){
+  form.querySelectorAll('input[type="hidden"][name="selected_jobs"]').forEach(el=>el.remove());
+  (ids||getSel()).forEach(v=>{ const i=document.createElement('input'); i.type='hidden'; i.name='selected_jobs'; i.value=String(v); form.appendChild(i); });
+}
+
+window.setBulk = function(action){
+  if (action==='delete' && !confirm('선택한 작업을 삭제하시겠습니까?')) return;
+  document.getElementById('bulkAction').value = action;
+  const form = document.getElementById('bulkForm');
+  attachHiddenSelected(form);
+  form.submit();
+};
+
+/* ===== 엑셀 모달 ===== */
+window.openExcelModal  = function(){ document.getElementById('excelScopeAll').checked=true; refreshExcelCounts(); document.getElementById('excelBackdrop').style.display='flex'; };
+window.closeExcelModal = function(){ document.getElementById('excelBackdrop').style.display='none'; };
+document.getElementById('excelBackdrop').addEventListener('click',(e)=>{ if(e.target.id==='excelBackdrop') window.closeExcelModal(); });
+
+window.downloadExcel = function(){
+  try{
+    const useAll = !!document.getElementById('excelScopeAll')?.checked;
+    const ids = useAll ? ALL_IDS : getSel();
+    if(!ids.length){ alert('선택된 항목이 없습니다.'); return false; }
+    const cols = Array.from(document.querySelectorAll('#excelForm input[name="cols"]:checked')).map(x=>x.value);
+    if(!cols.length){ alert('내보낼 컬럼을 1개 이상 선택하세요.'); return false; }
+
+    const f=document.createElement('form'); f.method='POST'; f.action="{{ url_for('export_selected_xlsx') }}"; f.style.display='none';
+    document.body.appendChild(f);
+    ids.forEach(v=>{ const i=document.createElement('input'); i.type='hidden'; i.name='selected_jobs'; i.value=String(v); f.appendChild(i); });
+    cols.forEach(v=>{ const i=document.createElement('input'); i.type='hidden'; i.name='cols'; i.value=v; f.appendChild(i); });
+    const sc=document.createElement('input'); sc.type='hidden'; sc.name='_scope'; sc.value=useAll?'all':'selected'; f.appendChild(sc);
+    f.submit(); setTimeout(()=>f.remove(),2000);
+    return false;
+  }catch(e){ console.error(e); alert('다운로드 중 오류'); return false; }
+};
+
+/* ===== 상태/결제 토글 ===== */
+function applyPaymentUI(idx, data){
+  const p = document.getElementById('pstatus-'+idx);
+  const r = document.getElementById('remain-'+idx);
+  if(p){
+    p.textContent = data.payment_status || '';
+    p.className = (data.payment_status==='부분' ? 'badge-partial'
+                 : data.payment_status==='미납' ? 'badge-unpaid'
+                 : data.payment_status==='미설정' ? 'price-missing'
+                 : 'price-chip');
+  }
+  if(r){ r.textContent = '잔액 ' + ((data.remaining ?? 0)) + '만'; }
+
+  const b = document.getElementById('btn-full-'+idx);
+  if(b){
+    if(data.payment_status === '완납'){
+      b.textContent = '완납취소';
+      b.classList.remove('btn-green'); b.classList.add('btn-red');
+      b.setAttribute('onclick','window.toggleFullPaid(this,false)');
+    }else{
+      b.textContent = '완납';
+      b.classList.remove('btn-red'); b.classList.add('btn-green');
+      b.setAttribute('onclick','window.toggleFullPaid(this,true)');
+    }
+  }
+}
+
+window.toggleStatus = async function(btn){
+  const idx=btn.dataset.index, url=btn.dataset.url;
+  try{
+    const res=await fetch(url,{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'},credentials:'same-origin'});
+    if(res.redirected){ alert('로그인이 필요합니다.'); location.href=res.url; return; }
+    const data=await res.json();
+    if(!res.ok||!data?.success){ alert('변경 실패: '+(data?.error||res.status)); return; }
+    btn.textContent=(data.status==='완료')?'완료취소':'작업 완료';
+    const chip=document.getElementById('todo-'+idx);
+    if(chip) chip.style.display = (data.status==='완료') ? 'none' : 'inline-block';
+  }catch(e){ console.error(e); alert('네트워크 오류'); }
+};
+
+window.toggleFullPaid = async function(btn, makeFull){
+  const idx=btn.dataset.index, url=btn.dataset.url;
+  try{
+    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin',body:JSON.stringify({action: makeFull?'full':'unpay'})});
+    if(res.redirected){ alert('로그인이 필요합니다.'); location.href=res.url; return; }
+    const data=await res.json();
+    if(!res.ok||!data?.success){ alert('지불 상태 변경 실패: '+(data?.error||res.status)); return; }
+    applyPaymentUI(idx, data);
+  }catch(e){ console.error(e); alert('네트워크 오류'); }
+};
+
+window.partialPaid = async function(btn){
+  const idx=btn.dataset.index, url=btn.dataset.url;
+  const val=prompt('부분 완납 금액(만원) 입력'); if(val===null) return;
+  const n=parseInt(val,10); if(isNaN(n)||n<0){ alert('숫자를 입력해 주세요.'); return; }
+  try{
+    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin',body:JSON.stringify({action:'partial',amount_man:n})});
+    if(res.redirected){ alert('로그인이 필요합니다.'); location.href=res.url; return; }
+    const data=await res.json();
+    if(!res.ok||!data?.success){ alert('부분완납 실패: '+(data?.error||res.status)); return; }
+    applyPaymentUI(idx, data);
+  }catch(e){ console.error(e); alert('네트워크 오류'); }
+};
+</script>
+{% endblock %}

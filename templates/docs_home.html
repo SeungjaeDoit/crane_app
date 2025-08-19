@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>서류 보내기/등록/관리</title>
+<style>
+  body{font-family:system-ui, -apple-system, '맑은 고딕', sans-serif; background:#f6f7fb}
+  .wrap{max-width:760px;margin:48px auto;padding:28px;background:#fff;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.06)}
+  h1{text-align:center;margin:0 0 20px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .tile{display:flex;align-items:center;justify-content:center;padding:16px;border-radius:14px;color:#fff;text-decoration:none;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.08)}
+  .t-green{background:#22c55e}.t-blue{background:#3b82f6}.t-indigo{background:#4338ca}.t-slate{background:#475569}
+  .full{grid-column:1/-1}
+  .msg{margin:8px 0 16px;color:#ef4444}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>서류 보내기 / 등록 / 관리</h1>
+
+  {% for m in get_flashed_messages(with_categories=true) %}
+    <div class="msg">{{ m[1] }}</div>
+  {% endfor %}
+
+  <div class="grid">
+    <a class="tile t-green" href="{{ url_for('docs_send') }}">📤 서류 보내기</a>
+    <a class="tile t-blue"  href="{{ url_for('docs_register') }}">📥 서류 등록</a>
+    <a class="tile t-slate" href="{{ url_for('docs_manage') }}">🗂️ 서류 관리</a>
+    <a class="tile t-slate full" href="{{ url_for('dashboard') }}">🏠 대시보드로 돌아가기</a>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>서류 관리</title>
+<style>
+  body{font-family:system-ui,-apple-system,'맑은 고딕',sans-serif;background:#f6f7fb}
+  .wrap{max-width:860px;margin:40px auto;padding:24px;background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.06)}
+  h2{margin:0 0 16px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left}
+  .act{display:flex;gap:8px}
+  .btn{padding:6px 10px;border-radius:8px;border:0;cursor:pointer;color:#fff;background:#3b82f6}
+  .btn.gray{background:#64748b}
+  .msg{margin-bottom:10px;color:#ef4444}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2>서류 관리</h2>
+
+  {% for m in get_flashed_messages(with_categories=true) %}
+    <div class="msg">{{ m[1] }}</div>
+  {% endfor %}
+
+  {% if rows %}
+  <table>
+    <thead>
+      <tr><th>파일명</th><th>크기</th><th>동작</th></tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r.name }}</td>
+        <td>{{ (r.size or 0)|int | string }} B</td>
+        <td class="act">
+          <a class="btn" href="{{ url_for('docs_file', fname=r.name) }}">다운로드</a>
+          <form method="post" action="{{ url_for('docs_delete') }}" style="margin:0">
+            <input type="hidden" name="name" value="{{ r.name }}">
+            <button class="btn gray" type="submit" onclick="return confirm('삭제할까요?')">삭제</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p>등록된 파일이 없습니다.</p>
+  {% endif %}
+
+  <p style="margin-top:14px;"><a class="btn gray" href="{{ url_for('docs_home') }}">뒤로</a></p>
+</div>
+</body>
+</html>

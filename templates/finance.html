@@ -1,0 +1,770 @@
+{% extends "base.html" %}
+{% block title %}매출/지출/수입 관리{% endblock %}
+
+{% block head %}
+<style>
+  .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .muted{color:#6b7280;font-size:12px}
+  .tab{display:inline-block;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;text-decoration:none;color:#111827;background:#fff}
+  .tab.active{background:#111827;color:#fff;border-color:#111827}
+  .btn{padding:8px 12px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;cursor:pointer}
+  .btn-primary{background:#111827;color:#fff;border-color:#111827}
+
+  table{width:100%;border-collapse:collapse}
+  th,td{border-bottom:1px solid #f0f1f3;padding:8px;text-align:left}
+  th[style*="right"], td[style*="right"]{text-align:right}
+  .sum-row td{font-weight:700;background:#fafafa}
+  .amt.unpaid{color:#dc2626;font-weight:700}
+  .amt.partial{color:#2563eb;font-weight:700}
+  .amt.paid{color:#111827}
+  .date-red{color:#dc2626;font-weight:700}
+  .dot.red{background:#dc2626;}
+
+  .legend{display:flex;align-items:center;gap:10px;font-size:12px;color:#6b7280}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%}
+  .dot.tomato{background:#ef4444}
+  .dot.blue{background:#2563eb}
+  .dot.gray{background:#9ca3af}
+
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:999px;padding:4px 8px;font-size:12px;display:flex;align-items:center;gap:6px}
+  .chip button{border:none;background:transparent;cursor:pointer;padding:0 2px}
+
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:9998}
+  .modal{background:#fff;border-radius:14px;border:1px solid #e5e7eb;box-shadow:0 20px 50px rgba(0,0,0,.15);width:min(760px,94vw);max-height:86vh;overflow:auto}
+  .modal header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #eef0f3}
+  .modal .body{padding:14px}
+  .modal .footer{padding:12px 14px;border-top:1px solid #eef0f3;display:flex;gap:8px;justify-content:flex-end}
+
+  .pill{padding:6px 10px;border:1px solid #e5e7eb;border-radius:999px;background:#fff;cursor:pointer;font-size:13px}
+  .pill.active{background:#111827;color:#fff;border-color:#111827}
+  .grp{display:grid;gap:8px;margin-bottom:10px}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="row" style="justify-content:space-between;margin-bottom:8px;">
+  <h2 style="margin:0;">매출/지출/수입 관리</h2>
+  <a class="tab" href="{{ url_for('dashboard') }}">메인메뉴로 돌아가기</a>
+</div>
+
+<div class="card" style="display:grid;gap:10px;">
+  <div class="row">
+    <a class="tab {{ 'active' if tab=='summary' else '' }}"
+       href="{{ url_for('finance_dashboard',
+          start=start, end=end, tab='summary',
+          half=half, by_worker=(1 if by_worker else 0),
+          by_machine=(1 if by_machine else 0),
+          by_client=(1 if by_client|default(0) else 0),
+          status=status|default(''),
+          pay=pay|default(''),
+          worker=sel_worker, worker_input=input_worker, plate=q_plate,
+          owner=owner|default(''), tenant=tenant|default(''),
+          page_size=page_size) }}">요약/내역</a>
+
+    <a class="tab {{ 'active' if tab=='income_list' else '' }}"
+       href="{{ url_for('finance_dashboard',
+          start=start, end=end, tab='income_list',
+          half=half, by_worker=(1 if by_worker else 0),
+          by_machine=(1 if by_machine else 0),
+          by_client=(1 if by_client|default(0) else 0),
+          status=status|default(''),
+          pay=pay|default(''),
+          worker=sel_worker, worker_input=input_worker, plate=q_plate,
+          owner=owner|default(''), tenant=tenant|default(''),
+          page_size=page_size) }}">수입관리</a>
+
+    <a class="tab {{ 'active' if tab=='expense_list' else '' }}"
+       href="{{ url_for('finance_dashboard',
+          start=start, end=end, tab='expense_list',
+          half=half, by_worker=(1 if by_worker else 0),
+          by_machine=(1 if by_machine else 0),
+          by_client=(1 if by_client|default(0) else 0),
+          status=status|default(''),
+          pay=pay|default(''),
+          worker=sel_worker, worker_input=input_worker, plate=q_plate,
+          owner=owner|default(''), tenant=tenant|default(''),
+          page_size=page_size) }}">지출관리</a>
+
+    <!-- 우측 지표 -->
+    <div style="margin-left:auto;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+      <div class="muted" style="font-size:12px;">
+        정산이 완료되었고 작업이 완료된 내역만 합산됩니다.
+      </div>
+
+      <div class="row" style="gap:8px;align-items:baseline;">
+        <div class="muted">총매출 :</div>
+        <div style="font-weight:800;font-size:18px;">{{ sales_total|won }}</div>
+      </div>
+
+      <div class="row" style="gap:12px;justify-content:flex-end;">
+        <div class="muted">지출</div>
+        <div style="font-weight:800;">{{ expense_total|won }}</div>
+
+        <div class="muted">수입</div>
+        <div style="font-weight:800;">{{ income_total|won }}</div>
+
+        <div class="muted">미정산 총액</div>
+        <div style="font-weight:800;">{{ unpaid_total|won }}</div>
+      </div>
+
+      <div class="row" style="gap:8px;align-items:baseline;">
+        <div class="muted">수익</div>
+        <div style="font-weight:800;">{{ profit_total|default(0)|won }}</div>
+        <div class="muted">(총 매출 - 지출 + 수입)</div>
+      </div>
+    </div>
+
+
+  <!-- 기간 & 페이지당 -->
+  <form id="rangeForm" class="row" method="get" action="{{ url_for('finance_dashboard') }}">
+    <input type="hidden" name="tab" value="{{ tab }}">
+    <input type="hidden" name="half" value="{{ half }}">
+    <input type="hidden" name="by_worker" value="{{ 1 if by_worker else 0 }}">
+    <input type="hidden" name="by_machine" value="{{ 1 if by_machine else 0 }}">
+    <input type="hidden" name="by_client" value="{{ 1 if by_client|default(0) else 0 }}">
+    <input type="hidden" name="status" value="{{ status|default('') }}">
+    <input type="hidden" name="pay" value="{{ pay|default('') }}">
+    <input type="hidden" name="worker" value="{{ sel_worker }}">
+    <input type="hidden" name="worker_input" value="{{ input_worker }}">
+    <input type="hidden" name="plate" value="{{ q_plate }}">
+    <input type="hidden" name="owner" value="{{ owner|default('') }}">
+    <input type="hidden" name="tenant" value="{{ tenant|default('') }}">
+    <input type="hidden" name="page" value="{{ page }}">
+
+    <label class="muted">기간</label>
+    <input type="date" name="start" value="{{ start }}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;">
+    <span>~</span>
+    <input type="date" name="end" value="{{ end }}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;">
+
+    <label class="muted" style="margin-left:8px;">페이지당</label>
+    <select id="pageSizeSelect" name="page_size" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;">
+      <option value="20"  {{ 'selected' if page_size==20 else '' }}>20개</option>
+      <option value="100" {{ 'selected' if page_size==100 else '' }}>100개</option>
+    </select>
+
+    <button class="btn" type="submit">적용</button>
+    <a class="tab" href="{{ url_for('finance_dashboard',
+                                    tab=tab, start=ytd_start, end=today_str,
+                                    half='', by_worker=0, by_machine=0, by_client=0,
+                                    status='', pay='',
+                                    worker='', worker_input='', plate='',
+                                    owner='', tenant='',
+                                    page_size=page_size, page=1) }}">초기화</a>
+
+    {% if tab == 'expense_list' %}
+      <button class="btn" type="button" onclick="openModal('exp-filter-modal')">검색 필터</button>
+      <button class="btn" type="button" onclick="openModal('exp-export-modal')">지출 엑셀로 뽑기</button>
+    {% endif %}
+    {% if tab == 'income_list' %}
+      <button class="btn" type="button" onclick="openModal('inc-filter-modal')">검색 필터</button>
+      <button class="btn" type="button" onclick="openModal('inc-export-modal')">수입 엑셀로 뽑기</button>
+    {% endif %}
+    {% if tab == 'summary' %}
+      <button class="btn" type="button" onclick="openModal('filter-modal')">검색 필터</button>
+      <button class="btn" type="button" onclick="openModal('export-modal')">엑셀로 뽑기</button>
+    {% endif %}
+
+  </form>
+</div>
+
+{% if tab == 'summary' %}
+
+  <div class="card" style="margin-top:8px;">
+    <div class="row" style="justify-content:space-between;align-items:center;">
+      <div class="chips" id="appliedChips">
+        {% if by_worker %}<span class="chip">기사: {{ input_worker or sel_worker or '전체' }}</span>{% endif %}
+        {% if by_machine and q_plate %}<span class="chip">장비: {{ q_plate }}</span>{% endif %}
+        {% if by_client and (owner or tenant) %}<span class="chip">거래처: {{ owner }}{% if tenant %} / {{ tenant }}{% endif %}</span>{% endif %}
+        {% if status=='todo' %}<span class="chip">진행중 작업만</span>{% elif status=='done' %}<span class="chip">완료된 작업</span>{% endif %}
+        {% if pay=='unpaid' %}<span class="chip">미정산된 작업만</span>{% elif pay=='paid' %}<span class="chip">정산이 완료된 작업만</span>{% endif %}
+      </div>
+      <div class="legend" style="margin-left:auto;">
+        <span class="dot tomato"></span> 미납 /
+        <span class="dot blue"></span> 부분납 /
+        <span class="dot gray"></span> 완납
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>
+            일자
+            <span class="muted" style="margin-left:8px;">
+              <span class="dot red"></span> 진행중
+            </span>
+          </th>
+          <th>원수급자</th>
+          <th>임차인</th>
+          <th>장비</th>
+          <th>차량번호</th>
+          <th>기사</th>
+          <th style="text-align:right;">금액</th>
+          <th style="text-align:center;">납부</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in jobs %}
+          <tr onclick="location.href='{{ url_for('view_jobs', date=r.date_str, worker=r.worker) }}'" style="cursor:pointer;">
+            <td class="{{ 'date-red' if r.is_todo else '' }}">{{ r.date_str }}</td>
+            <td>{{ r.owner }}</td>
+            <td>{{ r.tenant }}</td>
+            <td>{{ r.machine_name }}</td>
+            <td>{{ r.machine_number }}</td>
+            <td>{{ r.worker }}</td>
+            <td style="text-align:right;"><span class="amt {{ r.color }}">{{ r.amount_won|won }}</span></td>
+            <td style="text-align:center;">
+              {% if r.color == 'unpaid' %}미납
+              {% elif r.color == 'partial' %}부분납부
+              {% else %}완납{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        <tr class="sum-row">
+          <td colspan="6" style="text-align:right;">총 합계(전체)</td>
+          <td style="text-align:right;">{{ list_total_all|won }}</td>
+          <td></td>
+        </tr>
+
+
+      </tbody>
+    </table>
+
+    {% set base_url = url_for('finance_dashboard',
+                              start=start, end=end, tab='summary',
+                              half=half, by_worker=(1 if by_worker else 0),
+                              by_machine=(1 if by_machine else 0),
+                              by_client=(1 if by_client|default(0) else 0),
+                              status=status|default(''),
+                              pay=pay|default(''),
+                              worker=sel_worker, worker_input=input_worker, plate=q_plate,
+                              owner=owner|default(''), tenant=tenant|default(''),
+                              page_size=page_size) %}
+    <div style="display:flex; gap:8px; justify-content:center; margin-top:12px;">
+      {% if page > 1 %}
+        <a class="tab" href="{{ base_url }}&page=1">« 처음</a>
+        <a class="tab" href="{{ base_url }}&page={{ page-1 }}">‹ 이전</a>
+      {% else %}
+        <span class="tab">« 처음</span>
+        <span class="tab">‹ 이전</span>
+      {% endif %}
+      <span class="muted">페이지 {{ page }} / {{ total_pages }} (총 {{ total }}건)</span>
+      {% if page < total_pages %}
+        <a class="tab" href="{{ base_url }}&page={{ page+1 }}">다음 ›</a>
+        <a class="tab" href="{{ base_url }}&page={{ total_pages }}">마지막 »</a>
+      {% else %}
+        <span class="tab">다음 ›</span>
+        <span class="tab">마지막 »</span>
+      {% endif %}
+    </div>
+  </div>
+
+{% elif tab == 'income_list' %}
+
+  <div class="card" style="margin-top:8px; display:grid; gap:10px;">
+    <div class="row" style="justify-content:space-between;align-items:center;">
+      <h3 style="margin:0;">수입관리 ({{ start }} ~ {{ end }})</h3>
+      <div class="muted">총 수입: <b>{{ income_total|won }}</b></div>
+    </div>
+
+    <form method="post" action="{{ url_for('finance_income_add') }}" style="display:grid; gap:8px;">
+      <!-- 필터/기간/페이지 유지 -->
+      <input type="hidden" name="tab" value="income_list">
+      <input type="hidden" name="start" value="{{ start }}">
+      <input type="hidden" name="end" value="{{ end }}">
+      <input type="hidden" name="page_size" value="{{ page_size }}">
+      <input type="hidden" name="inc_cat" value="{{ inc_cat|default('') }}">
+      <input type="hidden" name="inc_desc" value="{{ inc_desc|default('') }}">
+
+      <div class="row" style="gap:12px; align-items:flex-end;">
+        <div>
+          <label class="muted">날짜</label><br>
+          <input type="date" name="date" value="{{ end }}" style="width:220px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+        </div>
+        <div>
+          <label class="muted">카테고리</label><br>
+          <input type="text" name="category" placeholder="예: 임대수입, 이자수익" style="width:220px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+        </div>
+        <div style="flex:1;">
+          <label class="muted">수입 내역</label><br>
+          <input type="text" name="desc" placeholder="설명" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+        </div>
+        <div>
+          <label class="muted">수입 금액</label><br>
+          <input type="text" name="amount" placeholder="예: 120,000" style="width:220px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+        </div>
+        <div>
+          <button class="btn btn-primary" type="submit" style="height:40px;">수입 등록</button>
+        </div>
+      </div>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>일자</th>
+          <th>카테고리</th>
+          <th>내역</th>
+          <th style="text-align:right;">금액</th>
+          <th style="text-align:center;">삭제</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in incs %}
+          {% set clickable = i.detail_url %}
+          <tr {% if clickable %} onclick="location.href='{{ i.detail_url }}'" style="cursor:pointer;" {% endif %}>
+            <td>{{ i.date }}</td>
+            <td>{{ i.category }}</td>
+            <td>{{ i.desc }}</td>
+            <td style="text-align:right;">
+              {# 외주받음 + 미완납이면 텍스트, 아니면 금액 #}
+              {% if i.source == 'auto_outsrc_received' and i.display_amount_text %}
+                {{ i.display_amount_text }}
+              {% else %}
+                {{ i.amount|won }}
+              {% endif %}
+            </td>
+            <td style="text-align:center;">
+              <form method="post"
+                    action="{{ url_for('finance_income_delete', iid=i.id) }}?{{ qs_inc }}"
+                    onclick="event.stopPropagation();">
+                {% set auto_inc = (i.source|default('')) == 'auto_outsrc_received' %}
+                <button class="btn"
+                        type="submit"
+                        data-auto="{{ 1 if auto_inc else 0 }}"
+                        onclick="event.stopPropagation(); return confirmDelete(this);">
+                  삭제
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        <tr class="sum-row">
+          <td colspan="3" style="text-align:right;">총 수입</td>
+          <td style="text-align:right;">{{ income_total|won }}</td>
+          <td></td>
+        </tr>
+        </tbody>
+      </table>
+      </div> 
+
+{% elif tab == 'expense_list' %}
+
+  <div class="card" style="margin-top:8px; display:grid; gap:10px;">
+    <div class="row" style="justify-content:space-between;align-items:center;">
+      <h3 style="margin:0;">지출관리 ({{ start }} ~ {{ end }})</h3>
+      <div class="muted">총 지출: <b>{{ expense_total|won }}</b></div>
+    </div>
+
+    <form method="post" action="{{ url_for('finance_expense_add') }}" style="display:grid; gap:8px;">
+      <!-- 필터/기간/페이지 유지 -->
+      <input type="hidden" name="tab" value="expense_list">
+      <input type="hidden" name="start" value="{{ start }}">
+      <input type="hidden" name="end" value="{{ end }}">
+      <input type="hidden" name="page_size" value="{{ page_size }}">
+      <input type="hidden" name="exp_cat" value="{{ exp_cat|default('') }}">
+      <input type="hidden" name="exp_desc" value="{{ exp_desc|default('') }}">
+
+      <div class="row" style="gap:12px; align-items:flex-end;">
+        <div>
+          <label class="muted">날짜</label><br>
+          <input type="date" name="date" value="{{ end }}" style="width:220px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+        </div>
+        <div>
+          <label class="muted">카테고리</label><br>
+          <input type="text" name="category" placeholder="예: 유류비, 수리비" style="width:220px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+        </div>
+        <div style="flex:1;">
+          <label class="muted">지출 내역</label><br>
+          <input type="text" name="desc" placeholder="설명" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+        </div>
+        <div>
+          <label class="muted">지출 금액</label><br>
+          <input type="text" name="amount" placeholder="예: 120,000" style="width:220px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+        </div>
+        <div>
+          <button class="btn btn-primary" type="submit" style="height:40px;">지출 등록</button>
+        </div>
+      </div>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>일자</th>
+          <th>카테고리</th>
+          <th>내역</th>
+          <th style="text-align:right;">금액</th>
+          <th style="text-align:center;">삭제</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in exps %}
+          {% set is_auto = (e.source == 'auto_outsrc_given') or (e.category == '외주줬음' and e.get('auto_key')) %}
+          {% set view_amt = 0 if is_auto else e.amount %}
+          <tr {% if e.detail_url %} onclick="location.href='{{ e.detail_url }}'" style="cursor:pointer;" {% endif %}>
+            <td>{{ e.date }}</td>
+            <td>{{ e.category }}</td>
+            <td>{{ e.desc }}</td>
+            <td style="text-align:right;">
+              {% if is_auto and e.display_amount_text %}
+                {{ e.display_amount_text }}
+              {% else %}
+                {{ view_amt|won }}
+              {% endif %}
+            </td>
+            <td style="text-align:center;">
+              <form method="post"
+                    action="{{ url_for('finance_expense_delete', eid=e.id) }}?{{ qs_exp }}"
+                    onclick="event.stopPropagation();">
+                <button class="btn"
+                        type="submit"
+                        data-auto="{{ 1 if is_auto else 0 }}"
+                        onclick="event.stopPropagation(); return confirmDelete(this);">
+                  삭제
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        <tr class="sum-row">
+          <td colspan="3" style="text-align:right;">총 지출</td>
+          <td style="text-align:right;">{{ expense_total|won }}</td>
+          <td></td>
+        </tr>
+        </tbody>
+      </table>
+      </div> 
+
+{% endif %}  
+
+<!-- ======= (요약) 매출 검색 필터 모달 ======= -->
+<div id="filter-modal" class="modal-backdrop">
+  <div class="modal">
+    <header>
+      <strong>검색 필터 (매출)</strong>
+      <button class="btn" onclick="closeModal('filter-modal')">닫기</button>
+    </header>
+
+    <form id="filterForm" class="body" method="get" action="{{ url_for('finance_dashboard') }}">
+      <input type="hidden" name="tab" value="summary">
+      <input type="hidden" name="start" value="{{ start }}">
+      <input type="hidden" name="end" value="{{ end }}">
+      <input type="hidden" name="page_size" value="{{ page_size }}">
+      <input type="hidden" name="page" value="1">
+      <input type="hidden" name="half" value="{{ half }}">
+
+      <input type="hidden" id="hid_status" name="status" value="{{ status|default('') }}">
+      <input type="hidden" id="hid_pay"    name="pay"    value="{{ pay|default('') }}">
+
+      <div class="grp">
+        <div class="row">
+          <button type="button" id="btnWorker"  class="pill {{ 'active' if by_worker else '' }}" onclick="toggleGrp('worker')">기사필터</button>
+          <button type="button" id="btnMachine" class="pill {{ 'active' if by_machine else '' }}" onclick="toggleGrp('machine')">장비필터</button>
+          <button type="button" id="btnClient"  class="pill {{ 'active' if by_client|default(0) else '' }}" onclick="toggleGrp('client')">거래처필터</button>
+        </div>
+        <input type="hidden" id="hid_by_worker"  name="by_worker"  value="{{ 1 if by_worker else 0 }}">
+        <input type="hidden" id="hid_by_machine" name="by_machine" value="{{ 1 if by_machine else 0 }}">
+        <input type="hidden" id="hid_by_client"  name="by_client"  value="{{ 1 if by_client|default(0) else 0 }}">
+      </div>
+
+      <div id="grp_worker" style="display:{% if by_worker %}block{% else %}none{% endif %};margin-bottom:10px;">
+        <label class="muted">기사 (등록 선택)</label>
+        <select name="worker" id="f_worker" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+          <option value="">전체</option>
+          {% for w in registered_workers %}
+            <option value="{{ w }}" {{ 'selected' if w==sel_worker else '' }}>{{ w }}</option>
+          {% endfor %}
+        </select>
+        <div style="height:6px"></div>
+        <label class="muted">기사 (직접 입력)</label>
+        <input type="text" name="worker_input" id="f_worker_input" value="{{ input_worker }}" placeholder="기사 이름 입력"
+               style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+      </div>
+
+      <div id="grp_machine" style="display:{% if by_machine %}block{% else %}none{% endif %};margin-bottom:10px;">
+        <label class="muted">차량번호</label>
+        <input type="text" name="plate" id="f_plate" value="{{ q_plate }}" placeholder="예: 01가1234, 015L8899 등"
+               style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+      </div>
+
+      <div id="grp_client" style="display:{% if by_client|default(0) %}block{% else %}none{% endif %};margin-bottom:10px;">
+        <label class="muted">원수급자</label>
+        <input type="text" name="owner" id="f_owner" value="{{ owner|default('') }}" placeholder="원수급자"
+               style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:6px;">
+        <label class="muted">임차인</label>
+        <input type="text" name="tenant" id="f_tenant" value="{{ tenant|default('') }}" placeholder="임차인"
+               style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+        <div class="muted" style="margin-top:4px;">원수급자/임차인 모두 검색됩니다.</div>
+      </div>
+
+      <div class="grp">
+        <div class="row">
+          <button type="button" id="btnStatusTodo" class="pill" onclick="setStatus('todo')">진행중 작업만</button>
+          <button type="button" id="btnStatusDone" class="pill" onclick="setStatus('done')">완료된 작업</button>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="row">
+          <button type="button" id="btnPayUnpaid" class="pill" onclick="setPay('unpaid')">미정산된 작업만</button>
+          <button type="button" id="btnPayPaid"   class="pill" onclick="setPay('paid')">정산이 완료된 작업만</button>
+        </div>
+      </div>
+
+      <div class="chips" id="chips"></div>
+
+      <div class="footer">
+        <button type="button" class="btn" onclick="closeModal('filter-modal')">취소</button>
+        <button type="submit" class="btn btn-primary">적용</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======= (매출) 엑셀 모달 ======= -->
+<div id="export-modal" class="modal-backdrop">
+  <div class="modal">
+    <header>
+      <strong>엑셀로 뽑기 (매출)</strong>
+      <button class="btn" onclick="closeModal('export-modal')">닫기</button>
+    </header>
+    <form class="body" method="post" action="{{ url_for('finance_export_xlsx') }}">
+      <input type="hidden" name="start" value="{{ start }}">
+      <input type="hidden" name="end" value="{{ end }}">
+      <input type="hidden" name="half" value="{{ half }}">
+      <input type="hidden" name="by_worker" value="{{ 1 if by_worker else 0 }}">
+      <input type="hidden" name="by_machine" value="{{ 1 if by_machine else 0 }}">
+      <input type="hidden" name="by_client" value="{{ 1 if by_client|default(0) else 0 }}">
+      <input type="hidden" name="status" value="{{ status|default('') }}">
+      <input type="hidden" name="pay" value="{{ pay|default('') }}">
+      <input type="hidden" name="worker" value="{{ sel_worker }}">
+      <input type="hidden" name="worker_input" value="{{ input_worker }}">
+      <input type="hidden" name="plate" value="{{ q_plate }}">
+      <input type="hidden" name="owner" value="{{ owner|default('') }}">
+      <input type="hidden" name="tenant" value="{{ tenant|default('') }}">
+
+      <div class="row" style="flex-wrap:wrap;">
+        <label class="tab"><input type="checkbox" name="cols" value="date"          checked> 일자</label>
+        <label class="tab"><input type="checkbox" name="cols" value="owner"         checked> 원수급자</label>
+        <label class="tab"><input type="checkbox" name="cols" value="tenant"        checked> 임차인</label>
+        <label class="tab"><input type="checkbox" name="cols" value="machine_name"  checked> 장비명</label>
+        <label class="tab"><input type="checkbox" name="cols" value="machine_number" checked> 차량번호</label>
+        <label class="tab"><input type="checkbox" name="cols" value="worker"        checked> 기사</label>
+        <label class="tab"><input type="checkbox" name="cols" value="amount"        checked> 금액(원)</label>
+        <label class="tab"><input type="checkbox" name="cols" value="status"        checked> 납부여부</label>
+      </div>
+
+      <div class="footer">
+        <button type="button" class="btn" onclick="closeModal('export-modal')">취소</button>
+        <button type="submit" class="btn btn-primary">엑셀로 추출</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======= 지출/수입 필터 & 엑셀 모달 ======= -->
+<div id="exp-filter-modal" class="modal-backdrop">
+  <div class="modal">
+    <header>
+      <strong>검색 필터 (지출)</strong>
+      <button class="btn" onclick="closeModal('exp-filter-modal')">닫기</button>
+    </header>
+    <form class="body" method="get" action="{{ url_for('finance_dashboard') }}">
+      <input type="hidden" name="tab" value="expense_list">
+      <input type="hidden" name="start" value="{{ start }}">
+      <input type="hidden" name="end" value="{{ end }}">
+      <input type="hidden" name="page_size" value="{{ page_size }}">
+      <div class="grp">
+        <div>
+          <label class="muted">카테고리</label>
+          <input type="text" name="exp_cat" value="{{ exp_cat|default('') }}" placeholder="예: 유류비, 수리비"
+                 style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+        </div>
+        <div>
+          <label class="muted">지출 내역</label>
+          <input type="text" name="exp_desc" value="{{ exp_desc|default('') }}" placeholder="설명 키워드"
+                 style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+        </div>
+      </div>
+      <div class="footer">
+        <button type="button" class="btn" onclick="closeModal('exp-filter-modal')">취소</button>
+        <button type="submit" class="btn btn-primary">적용</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="exp-export-modal" class="modal-backdrop">
+  <div class="modal">
+    <header>
+      <strong>지출 엑셀로 뽑기</strong>
+      <button class="btn" onclick="closeModal('exp-export-modal')">닫기</button>
+    </header>
+    <form class="body" method="post" action="{{ url_for('finance_expense_export_xlsx') }}">
+      <input type="hidden" name="start" value="{{ start }}">
+      <input type="hidden" name="end" value="{{ end }}">
+      <input type="hidden" name="exp_cat" value="{{ exp_cat|default('') }}">
+      <input type="hidden" name="exp_desc" value="{{ exp_desc|default('') }}">
+      <div class="row" style="flex-wrap:wrap;">
+        <label class="tab"><input type="checkbox" name="col_date"     value="1" checked> 일자</label>
+        <label class="tab"><input type="checkbox" name="col_category" value="1" checked> 카테고리</label>
+        <label class="tab"><input type="checkbox" name="col_desc"     value="1" checked> 내역</label>
+        <label class="tab"><input type="checkbox" name="col_amount"   value="1" checked> 금액(원)</label>
+      </div>
+      <div class="footer">
+        <button type="button" class="btn" onclick="closeModal('exp-export-modal')">취소</button>
+        <button type="submit" class="btn btn-primary">엑셀로 추출</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="inc-filter-modal" class="modal-backdrop">
+  <div class="modal">
+    <header>
+      <strong>검색 필터 (수입)</strong>
+      <button class="btn" onclick="closeModal('inc-filter-modal')">닫기</button>
+    </header>
+    <form class="body" method="get" action="{{ url_for('finance_dashboard') }}">
+      <input type="hidden" name="tab" value="income_list">
+      <input type="hidden" name="start" value="{{ start }}">
+      <input type="hidden" name="end" value="{{ end }}">
+      <input type="hidden" name="page_size" value="{{ page_size }}">
+      <div class="grp">
+        <div>
+          <label class="muted">카테고리</label>
+          <input type="text" name="inc_cat" value="{{ inc_cat|default('') }}" placeholder="예: 임대수입, 이자수익"
+                 style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+        </div>
+        <div>
+          <label class="muted">수입 내역</label>
+          <input type="text" name="inc_desc" value="{{ inc_desc|default('') }}" placeholder="설명 키워드"
+                 style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+        </div>
+      </div>
+      <div class="footer">
+        <button type="button" class="btn" onclick="closeModal('inc-filter-modal')">취소</button>
+        <button type="submit" class="btn btn-primary">적용</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="inc-export-modal" class="modal-backdrop">
+  <div class="modal">
+    <header>
+      <strong>수입 엑셀로 뽑기</strong>
+      <button class="btn" onclick="closeModal('inc-export-modal')">닫기</button>
+    </header>
+    <form class="body" method="post" action="{{ url_for('finance_income_export_xlsx') }}">
+      <input type="hidden" name="start" value="{{ start }}">
+      <input type="hidden" name="end" value="{{ end }}">
+      <input type="hidden" name="inc_cat" value="{{ inc_cat|default('') }}">
+      <input type="hidden" name="inc_desc" value="{{ inc_desc|default('') }}">
+      <div class="row" style="flex-wrap:wrap;">
+        <label class="tab"><input type="checkbox" name="col_date"     value="1" checked> 일자</label>
+        <label class="tab"><input type="checkbox" name="col_category" value="1" checked> 카테고리</label>
+        <label class="tab"><input type="checkbox" name="col_desc"     value="1" checked> 내역</label>
+        <label class="tab"><input type="checkbox" name="col_amount"   value="1" checked> 금액(원)</label>
+      </div>
+      <div class="footer">
+        <button type="button" class="btn" onclick="closeModal('inc-export-modal')">취소</button>
+        <button type="submit" class="btn btn-primary">엑셀로 추출</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openModal(id){ const el=document.getElementById(id); if(el){ el.style.display='flex'; initToggles?.(); renderChips?.(); } }
+  function closeModal(id){ const el=document.getElementById(id); if(el){ el.style.display='none'; } }
+
+  (function(){
+    const sel = document.getElementById('pageSizeSelect');
+    if(sel){
+      sel.addEventListener('change', function(){
+        const f = document.getElementById('rangeForm');
+        if(!f) return;
+        const pageInput = f.querySelector('input[name="page"]');
+        if(pageInput) pageInput.value = 1;
+        f.submit();
+      });
+    }
+  })();
+
+  function toggleGrp(kind){
+    const map = {
+      worker:['grp_worker','hid_by_worker','btnWorker'],
+      machine:['grp_machine','hid_by_machine','btnMachine'],
+      client:['grp_client','hid_by_client','btnClient'],
+    };
+    const ent = map[kind]; if(!ent) return;
+    const box = document.getElementById(ent[0]);
+    const hid = document.getElementById(ent[1]);
+    const btn = document.getElementById(ent[2]);
+    const on = box.style.display !== 'block';
+    box.style.display = on ? 'block':'none';
+    hid.value = on ? '1':'0';
+    if(btn) btn.classList.toggle('active', on);
+    renderChips();
+  }
+
+  function setStatus(val){ const hid=document.getElementById('hid_status'); if(!hid) return; hid.value=(hid.value===val)?'':val; updateStatusPills(); renderChips(); }
+  function setPay(val){ const hid=document.getElementById('hid_pay');    if(!hid) return; hid.value=(hid.value===val)?'':val; updatePayPills();    renderChips(); }
+
+  function updateStatusPills(){ const v=document.getElementById('hid_status')?.value||''; document.getElementById('btnStatusTodo')?.classList.toggle('active', v==='todo'); document.getElementById('btnStatusDone')?.classList.toggle('active', v==='done'); }
+  function updatePayPills(){ const v=document.getElementById('hid_pay')?.value||''; document.getElementById('btnPayUnpaid')?.classList.toggle('active', v==='unpaid'); document.getElementById('btnPayPaid')?.classList.toggle('active', v==='paid'); }
+  function initToggles(){ updateStatusPills(); updatePayPills(); }
+
+  function addChip(text, onClose){
+    const chips=document.getElementById('chips'); if(!chips) return;
+    const c=document.createElement('span'); c.className='chip'; c.textContent=text;
+    if(onClose){ const x=document.createElement('button'); x.type='button'; x.textContent='×'; x.onclick=onClose; c.appendChild(x); }
+    chips.appendChild(c);
+  }
+  function renderChips(){
+    const chips=document.getElementById('chips'); if(!chips) return;
+    chips.innerHTML='';
+    const byW=document.getElementById('hid_by_worker')?.value==='1';
+    const byM=document.getElementById('hid_by_machine')?.value==='1';
+    const byC=document.getElementById('hid_by_client')?.value==='1';
+    if(byW){
+      const w1=document.getElementById('f_worker').value||'전체';
+      const w2=document.getElementById('f_worker_input').value||'';
+      addChip('기사: ' + (w2? (w2 + (w1!=='전체'?' / '+w1:'')) : w1), function(){ document.getElementById('hid_by_worker').value='0'; document.getElementById('grp_worker').style.display='none'; document.getElementById('btnWorker').classList.remove('active'); renderChips(); });
+    }
+    if(byM){
+      const p=document.getElementById('f_plate').value||'(차량번호)';
+      addChip('장비: ' + p, function(){ document.getElementById('hid_by_machine').value='0'; document.getElementById('grp_machine').style.display='none'; document.getElementById('btnMachine').classList.remove('active'); renderChips(); });
+    }
+    if(byC){
+      const o=document.getElementById('f_owner').value||''; const t=document.getElementById('f_tenant').value||'';
+      addChip('거래처: ' + [o,t].filter(Boolean).join(' / '), function(){ document.getElementById('hid_by_client').value='0'; document.getElementById('grp_client').style.display='none'; document.getElementById('btnClient').classList.remove('active'); renderChips(); });
+    }
+    const st=document.getElementById('hid_status')?.value||'';
+    if(st==='todo') addChip('진행중 작업만', ()=>{ document.getElementById('hid_status').value=''; updateStatusPills(); renderChips(); });
+    if(st==='done') addChip('완료된 작업',  ()=>{ document.getElementById('hid_status').value=''; updateStatusPills(); renderChips(); });
+    const pay=document.getElementById('hid_pay')?.value||'';
+    if(pay==='unpaid') addChip('미정산된 작업만', ()=>{ document.getElementById('hid_pay').value=''; updatePayPills(); renderChips(); });
+    if(pay==='paid')   addChip('정산이 완료된 작업만', ()=>{ document.getElementById('hid_pay').value=''; updatePayPills(); renderChips(); });
+  }
+
+  ['f_worker','f_worker_input','f_plate','f_owner','f_tenant'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.addEventListener('input', renderChips);
+  });
+
+  // ✅ 전역 confirmDelete (window에 붙여 확실히 전역화)
+  window.confirmDelete = function(btn){
+    const isAuto = btn?.dataset?.auto === '1';
+    const msg = isAuto
+      ? '삭제하시겠습니까? 등록된 작업목록에서 삭제됩니다.'
+      : '정말 삭제하시겠습니까?';
+    return window.confirm(msg);
+  };
+</script>
+
+{% endblock %}

@@ -1,0 +1,65 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>{{ title or 'Documents' }}</title>
+<style>
+  body{font-family:system-ui,apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#f6f7f9;margin:0;padding:24px}
+  .card{max-width:860px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px}
+  h2{margin:0 0 12px}
+  .muted{color:#6b7280}
+  table{width:100%;border-collapse:collapse;margin-top:10px}
+  th,td{border-bottom:1px solid #e5e7eb;padding:8px 10px;text-align:left}
+  th{background:#f8fafc}
+  .btn{display:inline-block;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer;text-decoration:none}
+  .btn.primary{background:#2563eb;color:#fff;border-color:#2563eb}
+</style>
+
+{% if invalid %}
+  <div class="card"><h2>유효하지 않은 링크</h2><p class="muted">링크가 잘못되었거나 존재하지 않습니다.</p></div>
+  {% exit %}
+{% endif %}
+{% if revoked %}
+  <div class="card"><h2>해지된 링크</h2><p class="muted">발신자가 이 공유를 해지했습니다.</p></div>
+  {% exit %}
+{% endif %}
+{% if expired %}
+  <div class="card"><h2>만료된 링크</h2><p class="muted">공유 유효기간이 지났습니다.</p></div>
+  {% exit %}
+{% endif %}
+
+{% if need_pw %}
+  <div class="card">
+    <h2>{{ title or 'Documents' }}</h2>
+    <p class="muted">보안을 위해 비밀번호가 필요합니다.</p>
+    {% if bad_pw %}<p style="color:#dc2626">비밀번호가 올바르지 않습니다.</p>{% endif %}
+    <form method="post">
+      <input type="password" name="password" placeholder="비밀번호" style="padding:8px;border:1px solid #d1d5db;border-radius:8px">
+      <button class="btn primary">열기</button>
+    </form>
+  </div>
+  {% exit %}
+{% endif %}
+
+<div class="card">
+  <h2>{{ title or 'Documents' }}</h2>
+  {% if message %}<p>{{ message }}</p>{% endif %}
+  {% if expire_date %}<p class="muted">유효기간: {{ expire_date }}</p>{% endif %}
+  <p class="muted">파일 {{ count }}건</p>
+
+  <div style="margin:8px 0 12px">
+    <a class="btn primary" href="{{ url_for('share_download_zip', token=token) }}">전체 ZIP 다운로드</a>
+  </div>
+
+  <table>
+    <thead><tr><th>제목</th><th>파일명</th><th>크기</th><th>다운로드</th></tr></thead>
+    <tbody>
+      {% for d in docs %}
+        <tr>
+          <td>{{ d.title }}</td>
+          <td>{{ d.name }}</td>
+          <td>{{ d.size_h }}</td>
+          <td><a class="btn" href="{{ url_for('share_download_one', token=token, doc_id=d.id) }}">다운로드</a></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
